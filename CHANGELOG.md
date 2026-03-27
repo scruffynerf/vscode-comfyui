@@ -2,12 +2,14 @@
 
 All notable changes to the "VS Code ComfyUI" extension will be documented in this file.
 
-## [2.0.0] - 2026-03-26
+## [2.0.0] - 2026-03-27
 
 - Forked from [piiq/code-comfyui](https://github.com/piiq/code-comfyui) by [scruffynerf](https://github.com/scruffynerf).
 - Added Support for remote ComfyUI instances via `comfyui.serverUrl` setting.
-- Added `ComfyUI: Reload Editor` command with keybinding (`Cmd+Alt+R` / `Ctrl+Alt+R`).
-- Added `ComfyUI: Restart Server` command with configurable endpoint.
+- Consolidated `Open` and `Reload` commands into a single `ComfyUI: Open/Reload ComfyUI Editor` command.
+- Updated keybinding to `Ctrl+Shift+R` to avoid conflicts with macOS system shortcuts.
+- Added `ComfyUI: Restart Server` command with configurable endpoint and `Ctrl+Shift+Alt+R` shortcut.
+- Fixed `ComfyUI: Restart Server` throwing a false 'fetch failed' error when the server drops the connection during reboot (the extension now waits 5 seconds and automatically reloads the panel).
 - Added `ComfyUI: Install Hiddenswitch ComfyUI` (Standard) using `uv`.
 - Added `ComfyUI: Install Development ComfyUI` (Git Clone) with editable install support.
 - Added `comfyui.installDir` configuration setting to customize installation path.

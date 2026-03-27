@@ -20,13 +20,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "comfyui.openEditor",
-        "title": "Open ComfyUI Editor",
-        "category": "ComfyUI"
-      },
-      {
-        "command": "comfyui.reloadEditor",
-        "title": "Reload ComfyUI Editor",
+        "command": "comfyui.openReloadEditor",
+        "title": "Open/Reload ComfyUI Editor",
         "category": "ComfyUI"
       },
       {
@@ -60,7 +55,7 @@
         },
         "comfyui.restartEndpoint": {
           "type": "string",
-          "default": "/manager/reboot",
+          "default": "/v2/manager/reboot",
           "description": "The API endpoint used to restart the ComfyUI server."
         },
         "comfyui.installDir": {
@@ -72,15 +67,24 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically install uv if it is not found during ComfyUI installation."
+        },
+        "comfyui.defaultBranch": {
+          "type": "string",
+          "default": "main",
+          "description": "The default branch to checkout for development installation."
         }
       }
     },
     "keybindings": [
       {
-        "command": "comfyui.reloadEditor",
-        "key": "ctrl+alt+r",
-        "mac": "cmd+alt+r",
-        "when": "comfyuiEditorActive"
+        "command": "comfyui.openReloadEditor",
+        "key": "ctrl+shift+r",
+        "mac": "ctrl+shift+r"
+      },
+      {
+        "command": "comfyui.restartServer",
+        "key": "ctrl+shift+alt+r",
+        "mac": "ctrl+shift+alt+r"
       }
     ]
   },

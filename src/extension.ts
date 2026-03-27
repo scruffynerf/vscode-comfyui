@@ -14,7 +14,7 @@ class ComfyUIPanel {
 		this._panel = panel;
 		this._panel.webview.html = this._getWebviewContent();
 		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-		
+
 		this._panel.onDidChangeViewState(
 			(e: vscode.WebviewPanelOnDidChangeViewStateEvent) => {
 				vscode.commands.executeCommand('setContext', 'comfyuiEditorActive', this._panel.visible);
@@ -114,13 +114,7 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('ComfyUI extension is now active!');
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('comfyui.openEditor', () => {
-			ComfyUIPanel.createOrShow(context.extensionUri);
-		})
-	);
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand('comfyui.reloadEditor', () => {
+		vscode.commands.registerCommand('comfyui.openReloadEditor', () => {
 			if (ComfyUIPanel.currentPanel) {
 				ComfyUIPanel.currentPanel.reload();
 			} else {
@@ -133,15 +127,14 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('comfyui.restartServer', async () => {
 			const config = vscode.workspace.getConfiguration('comfyui');
 			const url = config.get<string>('serverUrl', 'http://localhost:8188');
-			const endpoint = config.get<string>('restartEndpoint', '/manager/reboot');
+			const endpoint = config.get<string>('restartEndpoint', '/v2/manager/reboot');
 
 			try {
 				vscode.window.showInformationMessage('Restarting ComfyUI Server...');
-				// Using node-fetch style fetch if available, or a simple POST request
-				const response = await fetch(`${url}${endpoint}`, { 
+				const response = await fetch(`${url}${endpoint}`, {
 					method: 'GET',
 				});
-				
+
 				if (response.ok) {
 					vscode.window.showInformationMessage('Server restart triggered. Waiting to reload...');
 					setTimeout(() => {
@@ -153,7 +146,28 @@ export function activate(context: vscode.ExtensionContext) {
 					vscode.window.showErrorMessage(`Failed to restart server: ${response.statusText}`);
 				}
 			} catch (error: any) {
-				vscode.window.showErrorMessage(`Error restarting server: ${error.message}. Make sure your server is running and the restart endpoint is correct.`);
+				// When the server restarts it drops the connection, causing fetch to throw a
+				// network error (TypeError: fetch failed / ECONNRESET / ECONNREFUSED).
+				// That means the restart was actually triggered — treat it as success.
+				const msg: string = error?.message ?? '';
+				const isConnectionDrop =
+					error instanceof TypeError &&
+					(msg.includes('fetch failed') ||
+					 msg.includes('ECONNRESET') ||
+					 msg.includes('ECONNREFUSED') ||
+					 msg.includes('socket hang up') ||
+					 msg.includes('network error'));
+
+				if (isConnectionDrop) {
+					vscode.window.showInformationMessage('Server restart triggered. Waiting to reload...');
+					setTimeout(() => {
+						if (ComfyUIPanel.currentPanel) {
+							ComfyUIPanel.currentPanel.reload();
+						}
+					}, 5000);
+				} else {
+					vscode.window.showErrorMessage(`Error restarting server: ${msg}. Make sure your server is running and the restart endpoint is correct.`);
+				}
 			}
 		})
 	);
@@ -173,9 +187,9 @@ export function activate(context: vscode.ExtensionContext) {
 			terminal.show();
 
 			const isWin = os.platform() === 'win32';
-			
+
 			if (isWin) {
-				const checkUv = installUv 
+				const checkUv = installUv
 					? `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Host "Installing uv..."; irm https://astral.sh/uv/install.ps1 | iex; $env:Path += ";$HOME\\.cargo\\bin;$HOME\\.local\\bin" }`
 					: `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Error "uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; exit 1 }`;
 
@@ -185,7 +199,7 @@ if ($?) { . .venv\\Scripts\\activate.ps1; \\
 uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"; \\
 Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI" }`);
 			} else {
-				const checkUv = installUv 
+				const checkUv = installUv
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`
 					: `command -v uv >/dev/null 2>&1 || { echo "Error: uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; false; }`;
 
@@ -202,6 +216,7 @@ echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch
 		vscode.commands.registerCommand('comfyui.installDevelopmentComfyUI', () => {
 			const config = vscode.workspace.getConfiguration('comfyui');
 			const installUv = config.get<boolean>('installUvAutomatically', true);
+			const defaultBranch = config.get<string>('defaultBranch', 'main');
 			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
 			const installDir = resolveInstallDir(
 				rawInstallDir,
@@ -213,26 +228,26 @@ echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch
 			terminal.show();
 
 			const isWin = os.platform() === 'win32';
-			
+
 			if (isWin) {
-				const checkUv = installUv 
+				const checkUv = installUv
 					? `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Host "Installing uv..."; irm https://astral.sh/uv/install.ps1 | iex; $env:Path += ";$HOME\\.cargo\\bin;$HOME\\.local\\bin" }`
 					: `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Error "uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; exit 1 }`;
 
 				terminal.sendText(`git clone https://github.com/hiddenswitch/ComfyUI.git; \\
-if ($?) { cd ComfyUI; git checkout develop; \\
+if ($?) { cd ComfyUI; git checkout ${defaultBranch}; \\
 ${checkUv}; \\
 uv venv --python 3.12; \\
 if ($?) { . .venv\\Scripts\\activate.ps1; \\
 uv pip install -e ".[dev]"; \\
 Write-Host "Development installation complete." } }`);
 			} else {
-				const checkUv = installUv 
+				const checkUv = installUv
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`
 					: `command -v uv >/dev/null 2>&1 || { echo "Error: uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; false; }`;
 
 				terminal.sendText(`git clone https://github.com/hiddenswitch/ComfyUI.git && \\
-cd ComfyUI && git checkout develop && \\
+cd ComfyUI && git checkout ${defaultBranch} && \\
 ${checkUv} && \\
 uv venv --python 3.12 && \\
 source .venv/bin/activate && \\
@@ -248,14 +263,14 @@ echo "Development installation complete."`);
 			const installDir = config.get<string>('installDir', 'comfyui-workspace');
 			const terminal = vscode.window.createTerminal('ComfyUI');
 			terminal.show();
-			
+
 			// Switch to appropriate directory and run
 			terminal.sendText(`if [ -d "${installDir}/ComfyUI" ]; then cd "${installDir}/ComfyUI"; else cd "${installDir}"; fi`);
 			terminal.sendText('source .venv/bin/activate && uv run --no-sync comfyui --enable-manager');
-			
+
 			vscode.window.showInformationMessage('Starting ComfyUI Server... Opening panel in 5 seconds.');
 			setTimeout(() => {
-				vscode.commands.executeCommand('comfyui.openEditor');
+				vscode.commands.executeCommand('comfyui.openReloadEditor');
 			}, 5000);
 		})
 	);
@@ -273,4 +288,4 @@ echo "Development installation complete."`);
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }

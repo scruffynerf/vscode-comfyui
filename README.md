@@ -15,8 +15,8 @@ Are you a developer or technical artist who works with both ComfyUI and code? Ti
 
 - 🎨 **Direct Interaction**: Use ComfyUI directly in your code editor (VS Code, Cursor, Theia, Antigravity, etc.).
 - 🌐 **Remote Support**: Connect to a remote ComfyUI server by configuring `comfyui.serverUrl`.
-- 🔄 **Quick Reload**: Reload the ComfyUI editor panel instantly with `Cmd+Alt+R` (or `Ctrl+Alt+R`).
-- ⚡ **Server Management**: Restart your ComfyUI server directly from the editor (requires ComfyUI-Manager or compatible API).
+- 🔄 **Quick Reload**: Reload or open the ComfyUI editor panel instantly with `Ctrl+Shift+R`.
+- ⚡ **Server Management**: Restart your ComfyUI server with `Ctrl+Shift+Alt+R`. The extension will automatically reload the editor panel after 5 seconds. (Requires ComfyUI-Manager or compatible API).
 - 📦 **One-Click ComfyUI Installation**: Install and run the [`hiddenswitch`](https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI) ComfyUI fork via `uv` for a self-contained setup.
   - It's uv/pip installable, lets you use ComfyUI as a Python library, and maintains 99% compatibility with the main repo — highly recommended!
 
@@ -35,9 +35,8 @@ Are you a developer or technical artist who works with both ComfyUI and code? Ti
 
 1. Start your ComfyUI server.
 2. Open your code editor.
-3. Use the Command Palette to run **ComfyUI: Open ComfyUI Editor**.
-4. Use **ComfyUI: Reload Editor** to refresh the interface.
-5. Use **ComfyUI: Restart Server** after developing custom nodes.
+3. Use the Command Palette to run **ComfyUI: Open/Reload ComfyUI Editor**.
+4. Use **ComfyUI: Restart Server** after developing custom nodes.
 
 ## Self-Contained Installation (using [Hiddenswitch](https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI))
 

@@ -108,6 +108,24 @@ class ComfyUIPanel {
 	}
 }
 
+async function waitForServer(url: string, interval = 1000, timeout?: number): Promise<boolean> {
+	const effectiveTimeout = timeout ?? 60000;
+	const startTime = Date.now();
+	while (Date.now() - startTime < effectiveTimeout) {
+		try {
+			// Try a simple ping to the server URL
+			const response = await fetch(url, { method: 'HEAD' });
+			if (response.ok || response.status < 500) {
+				return true;
+			}
+		} catch (e) {
+			// Server not up yet, ignore error and continue polling
+		}
+		await new Promise(resolve => setTimeout(resolve, interval));
+	}
+	return false;
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -136,10 +154,10 @@ export function activate(context: vscode.ExtensionContext) {
 				});
 
 				if (response.ok) {
-					vscode.window.showInformationMessage('Server restart triggered. Waiting to reload...');
-					setTimeout(() => {
-						vscode.commands.executeCommand('comfyui.openReloadEditor');
-					}, 5000);
+					vscode.window.showInformationMessage('Server restart triggered. Waiting for server to become responsive...');
+					const timeout = config.get<number>('serverTimeout', 60000);
+					await waitForServer(url, 1000, timeout);
+					vscode.commands.executeCommand('comfyui.openReloadEditor');
 				} else {
 					vscode.window.showErrorMessage(`Failed to restart server: ${response.statusText}`);
 				}
@@ -151,16 +169,16 @@ export function activate(context: vscode.ExtensionContext) {
 				const isConnectionDrop =
 					error instanceof TypeError &&
 					(msg.includes('fetch failed') ||
-					 msg.includes('ECONNRESET') ||
-					 msg.includes('ECONNREFUSED') ||
-					 msg.includes('socket hang up') ||
-					 msg.includes('network error'));
+						msg.includes('ECONNRESET') ||
+						msg.includes('ECONNREFUSED') ||
+						msg.includes('socket hang up') ||
+						msg.includes('network error'));
 
 				if (isConnectionDrop) {
-					vscode.window.showInformationMessage('Server restart triggered. Waiting to reload...');
-					setTimeout(() => {
-						vscode.commands.executeCommand('comfyui.openReloadEditor');
-					}, 5000);
+					vscode.window.showInformationMessage('Server restart triggered. Waiting for server to become responsive...');
+					const timeout = config.get<number>('serverTimeout', 60000);
+					await waitForServer(url, 1000, timeout);
+					vscode.commands.executeCommand('comfyui.openReloadEditor');
 				} else {
 					vscode.window.showErrorMessage(`Error restarting server: ${msg}. Make sure your server is running and the restart endpoint is correct.`);
 				}
@@ -264,10 +282,12 @@ echo "Development installation complete."`);
 			terminal.sendText(`if [ -d "${installDir}/ComfyUI" ]; then cd "${installDir}/ComfyUI"; else cd "${installDir}"; fi`);
 			terminal.sendText('source .venv/bin/activate && uv run --no-sync comfyui --enable-manager');
 
-			vscode.window.showInformationMessage('Starting ComfyUI Server... Opening panel in 5 seconds.');
-			setTimeout(() => {
+			vscode.window.showInformationMessage('Starting ComfyUI Server... Waiting for it to become responsive.');
+			const url = config.get<string>('serverUrl', 'http://localhost:8188');
+			const timeout = config.get<number>('serverTimeout', 60000);
+			waitForServer(url, 1000, timeout).then(() => {
 				vscode.commands.executeCommand('comfyui.openReloadEditor');
-			}, 5000);
+			});
 		})
 	);
 

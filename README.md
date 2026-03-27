@@ -28,8 +28,9 @@ Are you a developer or technical artist who works with both ComfyUI and code? Ti
 ## Configuration
 
 - `comfyui.serverUrl`: The URL of your ComfyUI instance (default: `http://localhost:8188`).  This can be remote!
-- `comfyui.restartEndpoint`: The API endpoint to restart the server (default: `/manager/reboot`).
+- `comfyui.restartEndpoint`: The API endpoint to restart the server (default: `/v2/manager/reboot`).
 - `comfyui.installDir`: The directory where ComfyUI will be installed (default: `comfyui-workspace`).
+- `comfyui.serverTimeout`: The maximum time (in milliseconds) to wait for the server to become responsive during start or restart (default: `60000`).
 
 ## Usage
 

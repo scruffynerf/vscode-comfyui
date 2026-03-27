@@ -6,5 +6,8 @@ src/**
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
+eslint.config.js
 **/*.map
 **/*.ts
+out/test/**
+node_modules/**

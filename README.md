@@ -31,6 +31,8 @@ Are you a developer or technical artist who works with both ComfyUI and code? Ti
 - `comfyui.restartEndpoint`: The API endpoint to restart the server (default: `/v2/manager/reboot`).
 - `comfyui.installDir`: The directory where ComfyUI will be installed (default: `comfyui-workspace`).
 - `comfyui.serverTimeout`: The maximum time (in milliseconds) to wait for the server to become responsive during start or restart (default: `60000`).
+- `comfyui.gitRepo`: The Git repository URL for development ComfyUI installations (default: `https://github.com/hiddenswitch/ComfyUI.git`).
+- `comfyui.defaultBranch`: The branch to checkout for development installations (default: `main`).
 
 ## Usage
 
@@ -39,12 +41,12 @@ Are you a developer or technical artist who works with both ComfyUI and code? Ti
 3. Use the Command Palette to run **ComfyUI: Open/Reload ComfyUI Editor**.
 4. Use **ComfyUI: Restart Server** after developing custom nodes.
 
-## Self-Contained Installation (using [Hiddenswitch](https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI))
+## Installation (Self-Contained)
 
-- **Standard Installation**: Run **ComfyUI: Install Hiddenswitch ComfyUI (Standard)** for a quick uv/pip-based setup.
-- **Development Installation**: Run **ComfyUI: Install Development ComfyUI (Git Clone)** if you want to:
-  - contribute to the `hiddenswitch` ComfyUI codebase (there are differences between this and the main ComfyUI repo), This clones the repository and performs an editable install.
-  - develop nodes from within `custom_nodes`.   Checkout your node development repo inside `custom_nodes` and you should be able to 'live code' your nodes, and see the changes reflected in the editor panel after a server restart/panel reload.
+- **Standard Installation**: Run **ComfyUI: Install Hiddenswitch ComfyUI (Standard)** for a quick uv/pip-based setup using the [Hiddenswitch fork](https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI).
+- **Development Installation**: Run **ComfyUI: Install Development ComfyUI (Git Clone)**. This clones the repository specified in `comfyui.gitRepo` (defaulting to the `hiddenswitch` fork) and performs an editable install. This allows you to use the main ComfyUI repository or any other fork, and potentially work on the ComfyUI codebase itself.
+
+Either should allow you to develop nodes from within `custom_nodes`. Checkout your node development repo inside `custom_nodes` and you should be able to 'live code' your nodes, and see the changes reflected in the editor panel after a server restart/panel reload.
 
 Once installed, run **ComfyUI: Run Hiddenswitch ComfyUI**. The extension will automatically open the ComfyUI editor panel after a few seconds.
 

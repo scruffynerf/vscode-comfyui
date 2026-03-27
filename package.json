@@ -68,15 +68,20 @@
           "default": true,
           "description": "Automatically install uv if it is not found during ComfyUI installation."
         },
+        "comfyui.serverTimeout": {
+          "type": "number",
+          "default": 60000,
+          "description": "The maximum time (in milliseconds) to wait for the ComfyUI server to become responsive during startup or restart."
+        },
         "comfyui.defaultBranch": {
           "type": "string",
           "default": "main",
           "description": "The default branch to checkout for development installation."
         },
-        "comfyui.serverTimeout": {
-          "type": "number",
-          "default": 60000,
-          "description": "The maximum time (in milliseconds) to wait for the ComfyUI server to become responsive during startup or restart."
+        "comfyui.gitRepo": {
+          "type": "string",
+          "default": "https://github.com/hiddenswitch/ComfyUI.git",
+          "description": "The Git repository URL to use for development ComfyUI installations."
         }
       }
     },

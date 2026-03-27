@@ -230,6 +230,7 @@ echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch
 		vscode.commands.registerCommand('comfyui.installDevelopmentComfyUI', () => {
 			const config = vscode.workspace.getConfiguration('comfyui');
 			const installUv = config.get<boolean>('installUvAutomatically', true);
+			const gitRepo = config.get<string>('gitRepo', 'https://github.com/hiddenswitch/ComfyUI.git');
 			const defaultBranch = config.get<string>('defaultBranch', 'main');
 			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
 			const installDir = resolveInstallDir(
@@ -248,7 +249,7 @@ echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch
 					? `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Host "Installing uv..."; irm https://astral.sh/uv/install.ps1 | iex; $env:Path += ";$HOME\\.cargo\\bin;$HOME\\.local\\bin" }`
 					: `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Error "uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; exit 1 }`;
 
-				terminal.sendText(`git clone https://github.com/hiddenswitch/ComfyUI.git; \\
+				terminal.sendText(`git clone ${gitRepo} ComfyUI; \\
 if ($?) { cd ComfyUI; git checkout ${defaultBranch}; \\
 ${checkUv}; \\
 uv venv --python 3.12; \\
@@ -260,7 +261,7 @@ Write-Host "Development installation complete." } }`);
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`
 					: `command -v uv >/dev/null 2>&1 || { echo "Error: uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; false; }`;
 
-				terminal.sendText(`git clone https://github.com/hiddenswitch/ComfyUI.git && \\
+				terminal.sendText(`git clone ${gitRepo} ComfyUI && \\
 cd ComfyUI && git checkout ${defaultBranch} && \\
 ${checkUv} && \\
 uv venv --python 3.12 && \\

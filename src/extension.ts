@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (ComfyUIPanel.currentPanel) {
 				ComfyUIPanel.currentPanel.reload();
 			} else {
-				vscode.window.showErrorMessage('No ComfyUI Editor is open.');
+				ComfyUIPanel.createOrShow(context.extensionUri);
 			}
 		})
 	);

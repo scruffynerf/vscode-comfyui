@@ -279,14 +279,21 @@ echo "Development installation complete."`);
 			const terminal = vscode.window.createTerminal('ComfyUI');
 			terminal.show();
 
+			const isWin = os.platform() === 'win32';
+
 			// Switch to appropriate directory and run
-			terminal.sendText(`if [ -d "${installDir}/ComfyUI" ]; then cd "${installDir}/ComfyUI"; else cd "${installDir}"; fi`);
-			terminal.sendText('source .venv/bin/activate && uv run --no-sync comfyui --enable-manager');
+			if (isWin) {
+				terminal.sendText(`if (Test-Path "${installDir}\\ComfyUI") { Set-Location "${installDir}\\ComfyUI" } else { Set-Location "${installDir}" }`);
+				terminal.sendText('. .venv\\Scripts\\Activate.ps1; uv run --no-sync comfyui --enable-manager');
+			} else {
+				terminal.sendText(`if [ -d "${installDir}/ComfyUI" ]; then cd "${installDir}/ComfyUI"; else cd "${installDir}"; fi`);
+				terminal.sendText('source .venv/bin/activate && uv run --no-sync comfyui --enable-manager');
+			}
 
 			vscode.window.showInformationMessage('Starting ComfyUI Server... Waiting for it to become responsive.');
 			const url = config.get<string>('serverUrl', 'http://localhost:8188');
 			const timeout = config.get<number>('serverTimeout', 60000);
-			waitForServer(url, 1000, timeout).then(() => {
+			waitForServer(url, 1000, timeout * 3).then(() => {
 				vscode.commands.executeCommand('comfyui.openReloadEditor');
 			});
 		})

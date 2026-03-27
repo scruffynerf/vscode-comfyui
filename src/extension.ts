@@ -11,6 +11,15 @@ class ComfyUIPanel {
 		this._panel = panel;
 		this._panel.webview.html = this._getWebviewContent();
 		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+		
+		this._panel.onDidChangeViewState(
+			(e: vscode.WebviewPanelOnDidChangeViewStateEvent) => {
+				vscode.commands.executeCommand('setContext', 'comfyuiEditorActive', this._panel.visible);
+			},
+			null,
+			this._disposables
+		);
+		vscode.commands.executeCommand('setContext', 'comfyuiEditorActive', true);
 	}
 
 	public static createOrShow(extensionUri: vscode.Uri) {
@@ -36,7 +45,19 @@ class ComfyUIPanel {
 		ComfyUIPanel.currentPanel = new ComfyUIPanel(panel, extensionUri);
 	}
 
+	public reload() {
+		// Setting html to empty and then back to content can help force a reload of the iframe
+		const content = this._getWebviewContent();
+		this._panel.webview.html = '';
+		setTimeout(() => {
+			this._panel.webview.html = content;
+		}, 100);
+	}
+
 	private _getWebviewContent() {
+		const config = vscode.workspace.getConfiguration('comfyui');
+		const url = config.get<string>('serverUrl', 'http://localhost:8188');
+
 		return `
 			<!DOCTYPE html>
 			<html lang="en">
@@ -51,6 +72,7 @@ class ComfyUIPanel {
 						width: 100%;
 						height: 100vh;
 						overflow: hidden;
+						background-color: #1e1e1e;
 					}
 					iframe {
 						border: none;
@@ -61,7 +83,7 @@ class ComfyUIPanel {
 			</head>
 			<body>
 				<iframe
-					src="http://localhost:8188"
+					src="${url}"
 					sandbox="allow-scripts allow-same-origin allow-forms"
 					allow="clipboard-read; clipboard-write">
 				</iframe>
@@ -73,6 +95,7 @@ class ComfyUIPanel {
 	public dispose() {
 		ComfyUIPanel.currentPanel = undefined;
 		this._panel.dispose();
+		vscode.commands.executeCommand('setContext', 'comfyuiEditorActive', false);
 		while (this._disposables.length) {
 			const disposable = this._disposables.pop();
 			if (disposable) {
@@ -87,11 +110,112 @@ class ComfyUIPanel {
 export function activate(context: vscode.ExtensionContext) {
 	console.log('ComfyUI extension is now active!');
 
-	const disposable = vscode.commands.registerCommand('comfyui.openEditor', () => {
-		ComfyUIPanel.createOrShow(context.extensionUri);
-	});
+	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.openEditor', () => {
+			ComfyUIPanel.createOrShow(context.extensionUri);
+		})
+	);
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.reloadEditor', () => {
+			if (ComfyUIPanel.currentPanel) {
+				ComfyUIPanel.currentPanel.reload();
+			} else {
+				vscode.window.showErrorMessage('No ComfyUI Editor is open.');
+			}
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.restartServer', async () => {
+			const config = vscode.workspace.getConfiguration('comfyui');
+			const url = config.get<string>('serverUrl', 'http://localhost:8188');
+			const endpoint = config.get<string>('restartEndpoint', '/manager/reboot');
+
+			try {
+				vscode.window.showInformationMessage('Restarting ComfyUI Server...');
+				// Using node-fetch style fetch if available, or a simple POST request
+				const response = await fetch(`${url}${endpoint}`, { 
+					method: 'POST',
+					// eslint-disable-next-line @typescript-eslint/naming-convention
+					headers: { 'Content-Type': 'application/json' }
+				});
+				
+				if (response.ok) {
+					vscode.window.showInformationMessage('Server restart triggered. Waiting to reload...');
+					setTimeout(() => {
+						if (ComfyUIPanel.currentPanel) {
+							ComfyUIPanel.currentPanel.reload();
+						}
+					}, 5000);
+				} else {
+					vscode.window.showErrorMessage(`Failed to restart server: ${response.statusText}`);
+				}
+			} catch (error: any) {
+				vscode.window.showErrorMessage(`Error restarting server: ${error.message}. Make sure your server is running and the restart endpoint is correct.`);
+			}
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.installComfyUI', () => {
+			const config = vscode.workspace.getConfiguration('comfyui');
+			const installDir = config.get<string>('installDir', 'comfyui-workspace');
+			const terminal = vscode.window.createTerminal('Install ComfyUI');
+			terminal.show();
+			terminal.sendText(`mkdir -p ${installDir} && cd ${installDir}`);
+			terminal.sendText('curl -LsSf https://astral.sh/uv/install.sh | sh');
+			terminal.sendText('uv venv --python 3.12');
+			terminal.sendText('source .venv/bin/activate');
+			terminal.sendText('uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"');
+			terminal.sendText('echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"');
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.installDevelopmentComfyUI', () => {
+			const config = vscode.workspace.getConfiguration('comfyui');
+			const installDir = config.get<string>('installDir', 'comfyui-workspace');
+			const terminal = vscode.window.createTerminal('Install Dev ComfyUI');
+			terminal.show();
+			terminal.sendText(`mkdir -p ${installDir} && cd ${installDir}`);
+			terminal.sendText('git clone https://github.com/hiddenswitch/ComfyUI.git');
+			terminal.sendText('cd ComfyUI && git checkout develop');
+			terminal.sendText('uv venv --python 3.12');
+			terminal.sendText('source .venv/bin/activate');
+			terminal.sendText('uv pip install -e ".[dev]"');
+			terminal.sendText('echo "Development installation complete."');
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.runHiddenswitch', () => {
+			const config = vscode.workspace.getConfiguration('comfyui');
+			const installDir = config.get<string>('installDir', 'comfyui-workspace');
+			const terminal = vscode.window.createTerminal('ComfyUI');
+			terminal.show();
+			
+			// Switch to appropriate directory and run
+			terminal.sendText(`if [ -d "${installDir}/ComfyUI" ]; then cd "${installDir}/ComfyUI"; else cd "${installDir}"; fi`);
+			terminal.sendText('source .venv/bin/activate && uv run --no-sync comfyui --enable-manager');
+			
+			vscode.window.showInformationMessage('Starting ComfyUI Server... Opening panel in 5 seconds.');
+			setTimeout(() => {
+				vscode.commands.executeCommand('comfyui.openEditor');
+			}, 5000);
+		})
+	);
+
+	// Listen for configuration changes
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
+			if (e.affectsConfiguration('comfyui.serverUrl')) {
+				if (ComfyUIPanel.currentPanel) {
+					ComfyUIPanel.currentPanel.reload();
+				}
+			}
+		})
+	);
 }
 
 // This method is called when your extension is deactivated

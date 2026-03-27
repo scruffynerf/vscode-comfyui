@@ -138,9 +138,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if (response.ok) {
 					vscode.window.showInformationMessage('Server restart triggered. Waiting to reload...');
 					setTimeout(() => {
-						if (ComfyUIPanel.currentPanel) {
-							ComfyUIPanel.currentPanel.reload();
-						}
+						vscode.commands.executeCommand('comfyui.openReloadEditor');
 					}, 5000);
 				} else {
 					vscode.window.showErrorMessage(`Failed to restart server: ${response.statusText}`);
@@ -161,9 +159,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if (isConnectionDrop) {
 					vscode.window.showInformationMessage('Server restart triggered. Waiting to reload...');
 					setTimeout(() => {
-						if (ComfyUIPanel.currentPanel) {
-							ComfyUIPanel.currentPanel.reload();
-						}
+						vscode.commands.executeCommand('comfyui.openReloadEditor');
 					}, 5000);
 				} else {
 					vscode.window.showErrorMessage(`Error restarting server: ${msg}. Make sure your server is running and the restart endpoint is correct.`);

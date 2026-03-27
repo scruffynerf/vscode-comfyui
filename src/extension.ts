@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
+import * as path from 'path';
 import { resolveInstallDir } from './installDir';
 
 class ComfyUIPanel {
@@ -187,7 +188,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('comfyui.installComfyUI', () => {
+		vscode.commands.registerCommand('comfyui.installComfyUI', async (args?: { autoStart?: boolean }) => {
 			const config = vscode.workspace.getConfiguration('comfyui');
 			const installUv = config.get<boolean>('installUvAutomatically', true);
 			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
@@ -196,11 +197,26 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
 				process.env.HOME
 			);
+
+			// Check if directory exists and is not empty
+			if (!args?.autoStart && fs.existsSync(installDir) && fs.readdirSync(installDir).length > 0) {
+				const selection = await vscode.window.showWarningMessage(
+					`The directory '${installDir}' is not empty. Do you want to continue with the installation?`,
+					'Continue',
+					'Cancel'
+				);
+				if (selection !== 'Continue') {
+					return;
+				}
+			}
+
+			vscode.window.showInformationMessage(`Starting ComfyUI Installation in ${installDir}...`);
 			fs.mkdirSync(installDir, { recursive: true });
 			const terminal = vscode.window.createTerminal({ name: 'Install ComfyUI', cwd: installDir });
 			terminal.show();
 
 			const isWin = os.platform() === 'win32';
+			const runCmd = args?.autoStart ? (isWin ? '; uv run --no-sync comfyui --enable-manager' : ' && uv run --no-sync comfyui --enable-manager') : (isWin ? '; Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"' : ' && echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"');
 
 			if (isWin) {
 				const checkUv = installUv
@@ -210,8 +226,7 @@ export function activate(context: vscode.ExtensionContext) {
 				terminal.sendText(`${checkUv}; \\
 uv venv --python 3.12; \\
 if ($?) { . .venv\\Scripts\\activate.ps1; \\
-uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"; \\
-Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI" }`);
+uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd} }`);
 			} else {
 				const checkUv = installUv
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`
@@ -220,14 +235,13 @@ Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hidden
 				terminal.sendText(`${checkUv} && \\
 uv venv --python 3.12 && \\
 source .venv/bin/activate && \\
-uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git" && \\
-echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"`);
+uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd}`);
 			}
 		})
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('comfyui.installDevelopmentComfyUI', () => {
+		vscode.commands.registerCommand('comfyui.installDevelopmentComfyUI', async (args?: { autoStart?: boolean }) => {
 			const config = vscode.workspace.getConfiguration('comfyui');
 			const installUv = config.get<boolean>('installUvAutomatically', true);
 			const gitRepo = config.get<string>('gitRepo', 'https://github.com/hiddenswitch/ComfyUI.git');
@@ -238,11 +252,26 @@ echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch
 				vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
 				process.env.HOME
 			);
+
+			// Check if directory exists and is not empty
+			if (!args?.autoStart && fs.existsSync(installDir) && fs.readdirSync(installDir).length > 0) {
+				const selection = await vscode.window.showWarningMessage(
+					`The directory '${installDir}' is not empty. Do you want to continue with the installation?`,
+					'Continue',
+					'Cancel'
+				);
+				if (selection !== 'Continue') {
+					return;
+				}
+			}
+
+			vscode.window.showInformationMessage(`Starting ComfyUI Development Installation in ${installDir}...`);
 			fs.mkdirSync(installDir, { recursive: true });
 			const terminal = vscode.window.createTerminal({ name: 'Install Dev ComfyUI', cwd: installDir });
 			terminal.show();
 
 			const isWin = os.platform() === 'win32';
+			const runCmd = args?.autoStart ? (isWin ? '; uv run --no-sync comfyui --enable-manager' : ' && uv run --no-sync comfyui --enable-manager') : (isWin ? '; Write-Host "Development installation complete."' : ' && echo "Development installation complete."');
 
 			if (isWin) {
 				const checkUv = installUv
@@ -254,8 +283,7 @@ if ($?) { cd ComfyUI; git checkout ${defaultBranch}; \\
 ${checkUv}; \\
 uv venv --python 3.12; \\
 if ($?) { . .venv\\Scripts\\activate.ps1; \\
-uv pip install -e ".[dev]"; \\
-Write-Host "Development installation complete." } }`);
+uv pip install -e ".[dev]"${runCmd} } }`);
 			} else {
 				const checkUv = installUv
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`
@@ -266,22 +294,64 @@ cd ComfyUI && git checkout ${defaultBranch} && \\
 ${checkUv} && \\
 uv venv --python 3.12 && \\
 source .venv/bin/activate && \\
-uv pip install -e ".[dev]" && \\
-echo "Development installation complete."`);
+uv pip install -e ".[dev]"${runCmd}`);
 			}
 		})
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('comfyui.runHiddenswitch', () => {
+		vscode.commands.registerCommand('comfyui.runHiddenswitch', async () => {
 			const config = vscode.workspace.getConfiguration('comfyui');
-			const installDir = config.get<string>('installDir', 'comfyui-workspace');
-			const terminal = vscode.window.createTerminal('ComfyUI');
-			terminal.show();
+			const url = config.get<string>('serverUrl', 'http://localhost:8188');
 
 			const isWin = os.platform() === 'win32';
+			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
+			const installDir = resolveInstallDir(
+				rawInstallDir,
+				vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+				process.env.HOME
+			);
 
-			// Switch to appropriate directory and run
+			// Smart Check: Is the server already running?
+			const isRunning = await waitForServer(url, 0, 100);
+			if (isRunning) {
+				vscode.window.showInformationMessage('ComfyUI server is already running. Opening panel...');
+				vscode.commands.executeCommand('comfyui.openReloadEditor');
+				return;
+			}
+
+			// Install Check: Is the software actually installed?
+			// Either the base dir or its ComfyUI subfolder should have a .venv
+			const baseVenv = path.join(installDir, '.venv');
+			const devVenv = path.join(installDir, 'ComfyUI', '.venv');
+			const isInstalled = fs.existsSync(baseVenv) || fs.existsSync(devVenv);
+
+			if (!isInstalled) {
+				const selection = await vscode.window.showInformationMessage(
+					`ComfyUI is not installed in '${installDir}'. Would you like to install it now?`,
+					'Install Standard (pip)',
+					'Install Development (git)',
+					'Cancel'
+				);
+
+				if (selection === 'Install Standard (pip)') {
+					vscode.commands.executeCommand('comfyui.installComfyUI', { autoStart: true });
+				} else if (selection === 'Install Development (git)') {
+					vscode.commands.executeCommand('comfyui.installDevelopmentComfyUI', { autoStart: true });
+				}
+
+				if (selection === 'Install Standard (pip)' || selection === 'Install Development (git)') {
+					const timeout = config.get<number>('serverTimeout', 60000);
+					// Give 10 minutes for installation + startup
+					waitForServer(url, 2000, 600000).then(() => {
+						vscode.commands.executeCommand('comfyui.openReloadEditor');
+					});
+				}
+				return;
+			}
+
+			const terminal = vscode.window.createTerminal('ComfyUI');
+			terminal.show();
 			if (isWin) {
 				terminal.sendText(`if (Test-Path "${installDir}\\ComfyUI") { Set-Location "${installDir}\\ComfyUI" } else { Set-Location "${installDir}" }`);
 				terminal.sendText('. .venv\\Scripts\\Activate.ps1; uv run --no-sync comfyui --enable-manager');
@@ -291,7 +361,6 @@ echo "Development installation complete."`);
 			}
 
 			vscode.window.showInformationMessage('Starting ComfyUI Server... Waiting for it to become responsive.');
-			const url = config.get<string>('serverUrl', 'http://localhost:8188');
 			const timeout = config.get<number>('serverTimeout', 60000);
 			waitForServer(url, 1000, timeout * 3).then(() => {
 				vscode.commands.executeCommand('comfyui.openReloadEditor');

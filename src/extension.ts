@@ -1,6 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import { resolveInstallDir } from './installDir';
 
 class ComfyUIPanel {
 	public static currentPanel: ComfyUIPanel | undefined;
@@ -160,10 +162,15 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('comfyui.installComfyUI', () => {
 			const config = vscode.workspace.getConfiguration('comfyui');
-			const installDir = config.get<string>('installDir', 'comfyui-workspace');
-			const terminal = vscode.window.createTerminal('Install ComfyUI');
+			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
+			const installDir = resolveInstallDir(
+				rawInstallDir,
+				vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+				process.env.HOME
+			);
+			fs.mkdirSync(installDir, { recursive: true });
+			const terminal = vscode.window.createTerminal({ name: 'Install ComfyUI', cwd: installDir });
 			terminal.show();
-			terminal.sendText(`mkdir -p ${installDir} && cd ${installDir}`);
 			terminal.sendText('curl -LsSf https://astral.sh/uv/install.sh | sh');
 			terminal.sendText('uv venv --python 3.12');
 			terminal.sendText('source .venv/bin/activate');
@@ -175,10 +182,15 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('comfyui.installDevelopmentComfyUI', () => {
 			const config = vscode.workspace.getConfiguration('comfyui');
-			const installDir = config.get<string>('installDir', 'comfyui-workspace');
-			const terminal = vscode.window.createTerminal('Install Dev ComfyUI');
+			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
+			const installDir = resolveInstallDir(
+				rawInstallDir,
+				vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+				process.env.HOME
+			);
+			fs.mkdirSync(installDir, { recursive: true });
+			const terminal = vscode.window.createTerminal({ name: 'Install Dev ComfyUI', cwd: installDir });
 			terminal.show();
-			terminal.sendText(`mkdir -p ${installDir} && cd ${installDir}`);
 			terminal.sendText('git clone https://github.com/hiddenswitch/ComfyUI.git');
 			terminal.sendText('cd ComfyUI && git checkout develop');
 			terminal.sendText('uv venv --python 3.12');

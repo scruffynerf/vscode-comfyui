@@ -67,6 +67,11 @@
           "type": "string",
           "default": "comfyui-workspace",
           "description": "The directory where ComfyUI will be installed."
+        },
+        "comfyui.installUvAutomatically": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically install uv if it is not found during ComfyUI installation."
         }
       }
     },

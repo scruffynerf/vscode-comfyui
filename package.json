@@ -82,6 +82,16 @@
           "type": "string",
           "default": "https://github.com/hiddenswitch/ComfyUI.git",
           "description": "The Git repository URL to use for development ComfyUI installations."
+        },
+        "comfyui.venvDir": {
+          "type": "string",
+          "default": ".venv",
+          "description": "The name of the virtual environment directory (e.g., '.venv' or 'venv')."
+        },
+        "comfyui.startupArgs": {
+          "type": "string",
+          "default": "",
+          "description": "Additional startup arguments to pass to ComfyUI (e.g., '--listen 0.0.0.0 --port 8189')."
         }
       }
     },

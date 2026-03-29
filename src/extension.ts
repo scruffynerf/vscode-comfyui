@@ -216,7 +216,10 @@ export function activate(context: vscode.ExtensionContext) {
 			terminal.show();
 
 			const isWin = os.platform() === 'win32';
-			const runCmd = args?.autoStart ? (isWin ? '; uv run --no-sync comfyui --enable-manager' : ' && uv run --no-sync comfyui --enable-manager') : (isWin ? '; Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"' : ' && echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"');
+			const venvDir = config.get<string>('venvDir', '.venv');
+			const startupArgs = config.get<string>('startupArgs', '');
+			const argsStr = startupArgs ? ` ${startupArgs}` : '';
+			const runCmd = args?.autoStart ? (isWin ? `; uv run --no-sync comfyui --enable-manager${argsStr}` : ` && uv run --no-sync comfyui --enable-manager${argsStr}`) : (isWin ? '; Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"' : ' && echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"');
 
 			if (isWin) {
 				const checkUv = installUv
@@ -225,7 +228,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				terminal.sendText(`${checkUv}; \\
 uv venv --python 3.12; \\
-if ($?) { . .venv\\Scripts\\activate.ps1; \\
+if ($?) { . ${venvDir}\\Scripts\\activate.ps1; \\
 uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd} }`);
 			} else {
 				const checkUv = installUv
@@ -234,7 +237,7 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 
 				terminal.sendText(`${checkUv} && \\
 uv venv --python 3.12 && \\
-source .venv/bin/activate && \\
+source ${venvDir}/bin/activate && \\
 uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd}`);
 			}
 		})
@@ -271,7 +274,10 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 			terminal.show();
 
 			const isWin = os.platform() === 'win32';
-			const runCmd = args?.autoStart ? (isWin ? '; uv run --no-sync comfyui --enable-manager' : ' && uv run --no-sync comfyui --enable-manager') : (isWin ? '; Write-Host "Development installation complete."' : ' && echo "Development installation complete."');
+			const venvDir = config.get<string>('venvDir', '.venv');
+			const startupArgs = config.get<string>('startupArgs', '');
+			const argsStr = startupArgs ? ` ${startupArgs}` : '';
+			const runCmd = args?.autoStart ? (isWin ? `; uv run --no-sync comfyui --enable-manager${argsStr}` : ` && uv run --no-sync comfyui --enable-manager${argsStr}`) : (isWin ? '; Write-Host "Development installation complete."' : ' && echo "Development installation complete."');
 
 			if (isWin) {
 				const checkUv = installUv
@@ -282,7 +288,7 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 if ($?) { cd ComfyUI; git checkout ${defaultBranch}; \\
 ${checkUv}; \\
 uv venv --python 3.12; \\
-if ($?) { . .venv\\Scripts\\activate.ps1; \\
+if ($?) { . ${venvDir}\\Scripts\\activate.ps1; \\
 uv pip install -e ".[dev]"${runCmd} } }`);
 			} else {
 				const checkUv = installUv
@@ -293,7 +299,7 @@ uv pip install -e ".[dev]"${runCmd} } }`);
 cd ComfyUI && git checkout ${defaultBranch} && \\
 ${checkUv} && \\
 uv venv --python 3.12 && \\
-source .venv/bin/activate && \\
+source ${venvDir}/bin/activate && \\
 uv pip install -e ".[dev]"${runCmd}`);
 			}
 		})
@@ -305,6 +311,9 @@ uv pip install -e ".[dev]"${runCmd}`);
 			const url = config.get<string>('serverUrl', 'http://localhost:8188');
 
 			const isWin = os.platform() === 'win32';
+			const venvDir = config.get<string>('venvDir', '.venv');
+			const startupArgs = config.get<string>('startupArgs', '');
+			const argsStr = startupArgs ? ` ${startupArgs}` : '';
 			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
 			const installDir = resolveInstallDir(
 				rawInstallDir,
@@ -321,9 +330,9 @@ uv pip install -e ".[dev]"${runCmd}`);
 			}
 
 			// Install Check: Is the software actually installed?
-			// Either the base dir or its ComfyUI subfolder should have a .venv
-			const baseVenv = path.join(installDir, '.venv');
-			const devVenv = path.join(installDir, 'ComfyUI', '.venv');
+			// Either the base dir or its ComfyUI subfolder should have a venvDir
+			const baseVenv = path.join(installDir, venvDir);
+			const devVenv = path.join(installDir, 'ComfyUI', venvDir);
 			const isInstalled = fs.existsSync(baseVenv) || fs.existsSync(devVenv);
 
 			if (!isInstalled) {
@@ -354,10 +363,10 @@ uv pip install -e ".[dev]"${runCmd}`);
 			terminal.show();
 			if (isWin) {
 				terminal.sendText(`if (Test-Path "${installDir}\\ComfyUI") { Set-Location "${installDir}\\ComfyUI" } else { Set-Location "${installDir}" }`);
-				terminal.sendText('. .venv\\Scripts\\Activate.ps1; uv run --no-sync comfyui --enable-manager');
+				terminal.sendText(`. ${venvDir}\\Scripts\\Activate.ps1; uv run --no-sync comfyui --enable-manager${argsStr}`);
 			} else {
 				terminal.sendText(`if [ -d "${installDir}/ComfyUI" ]; then cd "${installDir}/ComfyUI"; else cd "${installDir}"; fi`);
-				terminal.sendText('source .venv/bin/activate && uv run --no-sync comfyui --enable-manager');
+				terminal.sendText(`source ${venvDir}/bin/activate && uv run --no-sync comfyui --enable-manager${argsStr}`);
 			}
 
 			vscode.window.showInformationMessage('Starting ComfyUI Server... Waiting for it to become responsive.');

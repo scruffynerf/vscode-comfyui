@@ -227,7 +227,7 @@ export function activate(context: vscode.ExtensionContext) {
 					: `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Error "uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; exit 1 }`;
 
 				terminal.sendText(`${checkUv}; \\
-uv venv --python 3.12; \\
+uv venv ${venvDir} --python 3.12; \\
 if ($?) { . ${venvDir}\\Scripts\\activate.ps1; \\
 uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd} }`);
 			} else {
@@ -236,7 +236,7 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 					: `command -v uv >/dev/null 2>&1 || { echo "Error: uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; false; }`;
 
 				terminal.sendText(`${checkUv} && \\
-uv venv --python 3.12 && \\
+uv venv ${venvDir} --python 3.12 && \\
 source ${venvDir}/bin/activate && \\
 uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd}`);
 			}
@@ -287,7 +287,7 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 				terminal.sendText(`git clone ${gitRepo} ComfyUI; \\
 if ($?) { cd ComfyUI; git checkout ${defaultBranch}; \\
 ${checkUv}; \\
-uv venv --python 3.12; \\
+uv venv ${venvDir} --python 3.12; \\
 if ($?) { . ${venvDir}\\Scripts\\activate.ps1; \\
 uv pip install -e ".[dev]"${runCmd} } }`);
 			} else {
@@ -298,7 +298,7 @@ uv pip install -e ".[dev]"${runCmd} } }`);
 				terminal.sendText(`git clone ${gitRepo} ComfyUI && \\
 cd ComfyUI && git checkout ${defaultBranch} && \\
 ${checkUv} && \\
-uv venv --python 3.12 && \\
+uv venv ${venvDir} --python 3.12 && \\
 source ${venvDir}/bin/activate && \\
 uv pip install -e ".[dev]"${runCmd}`);
 			}

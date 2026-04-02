@@ -1,0 +1,9 @@
+{
+  "_comment": "Override descriptions for specific node ids in popular-nodes.md. Keys are Registry ids (case-sensitive). Values replace the auto-fetched description.",
+  "overrides": {
+    "comfyui-videohelpersuite": "Load, save, preview, and batch video frames in ComfyUI. Essential for any video workflow — handles frame splitting, combining, and format conversion.",
+    "rgthree-comfy": "Essential quality-of-life pack. Includes: Power Lora Loader (load multiple LoRAs cleanly), Context nodes (pass groups of values between nodes without spaghetti wires), Fast Groups Bypasser/Muter (toggle whole sections at once), Reroute nodes, Bookmark nodes, Display Any (inspect any value mid-workflow), and a node fixer for broken workflows. Worth installing for almost any workflow.",
+    "comfyui-kjnodes": "Large utility pack from kijai: mask/image manipulation, scheduling helpers, noise injection, model management, and LoRA stack nodes.",
+    "was-ns": "A massive node pack consisting of over 200 nodes, including image processing, masking, text handling, and arithmetic operations. Replaces older retired pack by original author"
+  }
+}

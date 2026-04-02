@@ -11,3 +11,13 @@ eslint.config.js
 **/*.ts
 out/test/**
 node_modules/**
+comfyui-workspace/**
+referencecode/**
+.comfyui-state.json
+CLAUDE.md
+TODO.md
+future_plans.md
+knowledge_base.md
+WRITING_DOCUMENTATION.md
+*.zip
+tools/__pycache__

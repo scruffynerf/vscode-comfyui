@@ -1,0 +1,36 @@
+{
+  "_comment": "Per-pack node class name transforms applied when rendering capability index entries. keys are the exact registry id (the backtick value in capability files, same as the uv pip install name); values are the literal string to remove from every matching node class name.",
+  "strip_suffix": {
+    "_comment": "keys are registry ids; values are literal suffix strings to remove from every matching node class name.",
+    "dspy_nodes": "|pysssss",
+    "comfyui-custom-scripts": "|pysssss",
+    "comfyui_image2prompt": "|fofo",
+    "comfyui-dream-video-batches": " [DVB]",
+    "comfyui-dream-project": " [Dream]",
+    "comfyui-batch-sequence": "|YokoYokoTEC"
+  },
+  "strip_prefix": {
+    "_comment": "keys are registry ids; values are literal preffix strings to remove from every matching node class name.",
+    "basic_data_handling": "Basic data handling: ",
+    "ComfyUI-Seed-Nodes": "Seed-Nodes: ",
+    "ComfyUI_LayerStyle_Advance": "LayerUtility: ",
+    "comfyui-light-tool": "Light-Tool: ",
+    "comfyui-easy-use": "easy ",
+    "comfyui-impact-pack": "Impact",
+    "comfyui_fill-nodes": "FL_",
+    "comfyui-rmbg": "AILab_",
+    "ComfyUI-QwenVL": "AILab_",
+    "comfyui-art-venture": "AV_",
+    "ComfyUI-WanVideoWrapper": "WanVideo",
+    "comfyui-hunyuanvideowrapper": "HyVideo",
+    "comfyui-cogvideoxwrapper": "CogVideo",
+    "bjornulf_custom_nodes": "Bjornulf_",
+    "comfyui-videohelpersuite": "VHS_",
+    "comfyui-automaticcfg": "Automatic CFG -",
+    "skimmed_cfg": "SkimmedCFG_",
+    "mikey_nodes": "Mikey ",
+    "comfyui-sam2": "GroundingDino",
+    "comfyui-reactor": "ReActor",
+    "rgthree-comfy": "Rgthree"
+  }
+}

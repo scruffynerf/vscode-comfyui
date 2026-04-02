@@ -2,7 +2,7 @@
   "name": "vscode-comfyui",
   "displayName": "VS Code ComfyUI",
   "description": "ComfyUI rendered for your code editor",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "publisher": "scruffynerf",
   "repository": {
     "type": "git",
@@ -42,6 +42,26 @@
       {
         "command": "comfyui.runHiddenswitch",
         "title": "Run Hiddenswitch ComfyUI",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.openStateDocument",
+        "title": "View Current ComfyUI State (JSON)",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.applyWorkflow",
+        "title": "Apply Currently Open Workflow JSON",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.installIntegrationNode",
+        "title": "Install/Update VSCode Integration Node",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.refreshNodeCatalog",
+        "title": "Refresh Node Catalog",
         "category": "ComfyUI"
       }
     ],
@@ -92,9 +112,29 @@
           "type": "string",
           "default": "",
           "description": "Additional startup arguments to pass to ComfyUI (e.g., '--listen 0.0.0.0 --port 8189')."
+        },
+        "comfyui.pythonVersion": {
+          "type": "string",
+          "default": "3.12",
+          "description": "The Python version to use when creating the virtual environment (e.g., '3.12', '3.11', '/usr/bin/python3.12')."
+        },
+        "comfyui.enableAiFeatures": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AI agent integration: state file syncing, workflow summary, node catalog, and the apply-patch bridge. Set to false to use the extension as a plain embedded ComfyUI panel with no file-system side effects."
         }
       }
     },
+    "jsonValidation": [
+      {
+        "fileMatch": "**/comfyai/workflow-patch.json",
+        "url": "./schemas/workflow-patch.schema.json"
+      },
+      {
+        "fileMatch": "**/comfyai/apply-patch-trigger.json",
+        "url": "./schemas/apply-patch-trigger.schema.json"
+      }
+    ],
     "keybindings": [
       {
         "command": "comfyui.openReloadEditor",

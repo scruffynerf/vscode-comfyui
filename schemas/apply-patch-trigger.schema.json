@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ComfyUI Apply Signal",
+  "description": "Written to comfyai/apply-patch-trigger.json to trigger the extension. Change 'ts' on every write to ensure the file watcher fires even if other fields are unchanged.",
+  "type": "object",
+  "required": ["ts"],
+  "properties": {
+    "ts": {
+      "type": "number",
+      "description": "Unix timestamp (seconds). Must change on every write — this is what triggers the file watcher. Use Date.now() / 1000."
+    },
+    "patchPath": {
+      "type": "string",
+      "description": "Path to a comfyai/workflow-patch.json file. Relative paths resolve from the workspace root. The patch is merged into the current graph state. Mutually exclusive with sourcePath and command."
+    },
+    "sourcePath": {
+      "type": "string",
+      "description": "Path to a full ComfyUI workflow JSON file to load wholesale. Mutually exclusive with patchPath and command."
+    },
+    "command": {
+      "type": "string",
+      "enum": ["queue", "interrupt"],
+      "description": "Server command to execute. 'queue' submits the current workflow for generation; 'interrupt' stops the running generation. Mutually exclusive with patchPath and sourcePath."
+    }
+  },
+  "additionalProperties": false
+}

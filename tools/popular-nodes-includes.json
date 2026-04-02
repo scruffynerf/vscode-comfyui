@@ -1,0 +1,4 @@
+{
+  "_comment": "Nodes listed here are always included in popular-nodes.md regardless of rank. Each entry: { id, reason }.",
+  "included": []
+}

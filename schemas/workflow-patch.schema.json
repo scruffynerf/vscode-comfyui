@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ComfyUI Patch",
+  "description": "A partial workflow update applied by writing to comfyai/apply-patch-trigger.json. Nodes and links are merged by ID into the current graph state.",
+  "type": "object",
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "description": "Nodes to add or update. Each entry is merged into the existing node with the same id (or added if new).",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Node ID. Use next_node_id from comfyai/workflow-summary.md when adding new nodes."
+          },
+          "type": {
+            "type": "string",
+            "description": "Node type string (e.g. 'KSampler', 'CLIPTextEncode'). Required when adding a new node."
+          },
+          "title": {
+            "type": "string",
+            "description": "Optional human-readable label shown above the node."
+          },
+          "pos": {
+            "type": "array",
+            "description": "Canvas position [x, y].",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "size": {
+            "description": "Node size {0: width, 1: height} or [width, height]."
+          },
+          "widgets_values": {
+            "description": "Ordered array (or map) of the node's widget values. Slot order matches the node type definition."
+          },
+          "inputs": {
+            "type": "array",
+            "description": "Input slot descriptors. Usually not needed in patches — rewire via 'links' instead.",
+            "items": { "type": "object" }
+          },
+          "outputs": {
+            "type": "array",
+            "description": "Output slot descriptors.",
+            "items": { "type": "object" }
+          },
+          "properties": {
+            "type": "object",
+            "description": "Node-type-specific properties (e.g. show_text for display nodes)."
+          },
+          "flags": {
+            "type": "object",
+            "description": "LiteGraph node flags (e.g. {collapsed: true})."
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "links": {
+      "type": "array",
+      "description": "Links to add or replace. Each link is matched by its link_id (first element) and replaced in full, or appended if new.",
+      "items": {
+        "type": "array",
+        "description": "Link tuple: [link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]. Use next_link_id from comfyai/workflow-summary.md for new links.",
+        "minItems": 6,
+        "maxItems": 6,
+        "prefixItems": [
+          { "type": "integer", "description": "link_id — unique ID for this link" },
+          { "type": "integer", "description": "src_node_id" },
+          { "type": "integer", "description": "src_slot — output slot index on the source node" },
+          { "type": "integer", "description": "dst_node_id" },
+          { "type": "integer", "description": "dst_slot — input slot index on the destination node" },
+          { "type": "string", "description": "dtype — data type (e.g. 'MODEL', 'LATENT', 'IMAGE', 'CONDITIONING', 'STRING')" }
+        ]
+      }
+    },
+    "groups": {
+      "type": "array",
+      "description": "Groups (visual bounding boxes). If present, replaces the entire groups array.",
+      "items": { "type": "object" }
+    }
+  },
+  "additionalProperties": false
+}

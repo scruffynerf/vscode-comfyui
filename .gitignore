@@ -3,6 +3,9 @@ dist
 node_modules
 .vscode-test/
 *.vsix
-.vscodeignore
 .DS_Store
 comfyui-workspace
+referencecode
+CLAUDE.md
+__pycache__
+workflow_analyzer.zip

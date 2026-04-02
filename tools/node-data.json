@@ -1,0 +1,269 @@
+{
+  "_comment": "Shared node data for workflowAnalyzer.ts and workflow_analyzer.py. Both load this file at runtime.",
+
+  "nodeDescriptions": {
+    "vhs_loadvideo":             "load video file",
+    "loadimage":                 "load image file",
+    "checkpointloadersimple":    "load model checkpoint",
+    "vaeloader":                 "load VAE model",
+    "loraloader":                "load LoRA weights",
+    "upscalemodelloader":        "load upscale model",
+    "cliploader":                "load CLIP text encoder",
+    "unetloader":                "load UNet model",
+    "dualcliploader":            "load dual CLIP encoders",
+    "ltxvaudiovaeloader":        "load LTX audio VAE",
+    "ltxavtextencoderloader":    "load LTX text encoder",
+    "latentupscalemodelloader":  "load latent upscale model",
+    "ksampler":                  "denoise/generate with sampler",
+    "ksampleradvanced":          "advanced denoise/generate",
+    "ksamplerselect":            "select sampler algorithm",
+    "samplercustomadvanced":     "custom advanced sampler",
+    "wanvideosampler":           "WanVideo denoising sampler",
+    "samplercustom":             "custom sampler",
+    "manualsigmas":              "manual sigma schedule",
+    "cfgguider":                 "CFG guidance scale",
+    "randomnoise":               "random noise source",
+    "vaedecode":                 "decode latent to image",
+    "vaedecodetiled":            "tiled decode latent to image",
+    "vaeencode":                 "encode image to latent",
+    "wanvideoencode":            "encode frames to video latent",
+    "wanvideodecode":            "decode video latent to frames",
+    "cliptextencode":            "encode text prompt",
+    "ltxvaudiovaeencode":        "encode audio to LTX latent",
+    "ltxvaudiovaedecode":        "decode LTX audio latent",
+    "ltxvconditioning":          "LTX video conditioning",
+    "ltxvimgtovideoinplace":     "LTX image-to-video (inplace)",
+    "ltxvlatentupsampler":       "LTX latent upscaler",
+    "ltxvconcatavlatent":        "concatenate audio+video latents",
+    "ltxvseparateavlatent":      "separate audio+video latents",
+    "ltxvcropguides":            "LTX crop guidance",
+    "ltxvpreprocess":            "LTX preprocessing",
+    "textgenerateltx2prompt":    "generate LTX2 prompt text",
+    "imageupscalewithmodel":     "upscale with AI model",
+    "imageresize":               "resize image",
+    "imagesharpen":              "sharpen image",
+    "resizeimagesbylongeredge":  "resize by longest edge",
+    "resizeimagemasknode":       "resize image and mask",
+    "vhs_videocombine":          "combine frames to video",
+    "vhs_splitimages":           "split video to frames",
+    "createvideo":               "create video from frames",
+    "trimaudioduration":         "trim audio to duration",
+    "solidmask":                 "solid-color mask",
+    "setlatentnoisemask":        "apply noise mask to latent",
+    "emptyltxvlatentvideo":      "empty LTX video latent",
+    "primitiveint":              "integer parameter",
+    "primitivefloat":            "float parameter",
+    "primitiveboolean":          "boolean parameter",
+    "primitivestring":           "string parameter",
+    "primitivemultiline":        "multiline string parameter",
+    "intconstant":               "integer constant",
+    "floatconstant":             "float constant",
+    "stringconstant":            "string constant",
+    "getnode":                   "get variable value",
+    "setnode":                   "set variable value",
+    "simplemath":                "math operation",
+    "mathexpression":            "math expression",
+    "comfymathexpression":       "math expression",
+    "forloopstart":              "start of for loop",
+    "forloopend":                "end of for loop",
+    "whileloopstart":            "start of while loop",
+    "whileloopend":              "end of while loop",
+    "reroute":                   "reroute connection",
+    "previewany":                "preview value (debug)"
+  },
+
+  "_extractorsComment": [
+    "Rules are tried in order; the first match wins. Put more specific rules before general ones.",
+    "Fields:",
+    "  matches   string[]  — substrings of the normalized type (lowercased, non-alphanumeric stripped)",
+    "  exact     bool      — if true, normalized type must be in matches exactly (prevents prefix collision)",
+    "  minLen    int       — minimum vals.length (optional; typeGuards provide per-field checks)",
+    "  typeGuards [{idx, type?, nonEmpty?, notNull?}] — all must pass before rule fires",
+    "  fields    [{label, idx, quote?, json?, stringify?, truncate?, stripNewlines?}]",
+    "    quote       — wrap value in double quotes",
+    "    json        — JSON.stringify the value (handles numbers, strings, booleans uniformly)",
+    "    stringify   — convert to string first (for values that may be numbers or strings)",
+    "    truncate N  — truncate string representation to N chars and append …",
+    "    stripNewlines — replace \\n with space"
+  ],
+
+  "simpleExtractors": [
+    {
+      "_comment": "Text encoder / prompt — truncate long prompts, strip newlines",
+      "matches": ["cliptextencode", "textencode"],
+      "typeGuards": [{"idx": 0, "type": "string", "nonEmpty": true}],
+      "fields": [{"label": "text", "idx": 0, "quote": true, "truncate": 100, "stripNewlines": true}]
+    },
+    {
+      "_comment": "KSampler — exact; widget schema: seed@0, control_after@1, steps@2, cfg@3, sampler@4, scheduler@5, denoise@6",
+      "matches": ["ksampler"],
+      "exact": true,
+      "minLen": 7,
+      "fields": [
+        {"label": "steps",     "idx": 2},
+        {"label": "cfg",       "idx": 3},
+        {"label": "sampler",   "idx": 4, "quote": true},
+        {"label": "scheduler", "idx": 5, "quote": true},
+        {"label": "denoise",   "idx": 6}
+      ]
+    },
+    {
+      "_comment": "KSamplerAdvanced — exact; schema: add_noise@0, seed@1, control_after@2, steps@3, cfg@4, sampler@5, scheduler@6, start_at@7, end_at@8",
+      "matches": ["ksampleradvanced"],
+      "exact": true,
+      "minLen": 7,
+      "fields": [
+        {"label": "steps",     "idx": 3},
+        {"label": "cfg",       "idx": 4},
+        {"label": "sampler",   "idx": 5, "quote": true},
+        {"label": "scheduler", "idx": 6, "quote": true}
+      ]
+    },
+    {
+      "_comment": "LoRA loader — must precede generic 'loader' rule; first widget is filename string",
+      "matches": ["loraloader"],
+      "minLen": 2,
+      "typeGuards": [{"idx": 0, "type": "string"}],
+      "fields": [
+        {"label": "lora",     "idx": 0, "quote": true},
+        {"label": "strength", "idx": 1}
+      ]
+    },
+    {
+      "_comment": "Generic loader / file-input nodes — any node whose type contains 'loader', 'loadvideo', or 'loadimage'",
+      "matches": ["loader", "loadvideo", "loadimage"],
+      "typeGuards": [{"idx": 0, "type": "string", "nonEmpty": true}],
+      "fields": [{"label": "file", "idx": 0, "quote": true}]
+    },
+    {
+      "_comment": "VideoCombine nodes — non-sequential indices: fps@0, prefix@2, format@3",
+      "matches": ["videocombine"],
+      "minLen": 4,
+      "fields": [
+        {"label": "fps",    "idx": 0},
+        {"label": "format", "idx": 3, "quote": true},
+        {"label": "prefix", "idx": 2, "quote": true}
+      ]
+    },
+    {
+      "_comment": "Primitive parameter nodes — JSON-encode value, truncate long strings",
+      "matches": ["primitiveint", "primitivefloat", "primitivebool", "primitivestring", "primitivemultiline"],
+      "typeGuards": [{"idx": 0, "notNull": true}],
+      "fields": [{"label": "value", "idx": 0, "json": true, "truncate": 80}]
+    },
+    {
+      "_comment": "Manual sigma schedule — stringify (may be number), truncate, quote",
+      "matches": ["manualsigmas"],
+      "minLen": 1,
+      "fields": [{"label": "sigmas", "idx": 0, "stringify": true, "truncate": 60, "quote": true}]
+    },
+    {
+      "_comment": "Sampler selection nodes",
+      "matches": ["ksamplerselect"],
+      "minLen": 1,
+      "fields": [{"label": "sampler", "idx": 0, "quote": true}]
+    },
+    {
+      "_comment": "CFG guidance scale",
+      "matches": ["cfgguider"],
+      "minLen": 1,
+      "fields": [{"label": "cfg", "idx": 0}]
+    },
+    {
+      "_comment": "Random noise — seed and control mode",
+      "matches": ["randomnoise"],
+      "minLen": 2,
+      "fields": [
+        {"label": "seed", "idx": 0},
+        {"label": "mode", "idx": 1, "quote": true}
+      ]
+    },
+    {
+      "_comment": "Math expression nodes",
+      "matches": ["mathexpression", "comfymath"],
+      "minLen": 1,
+      "fields": [{"label": "expr", "idx": 0, "quote": true}]
+    },
+    {
+      "_comment": "Tiled VAE decode",
+      "matches": ["vaedecodetiled"],
+      "minLen": 1,
+      "fields": [{"label": "tile_size", "idx": 0}]
+    },
+    {
+      "_comment": "LTX conditioning — frame_rate is LTX-specific, not generic to all conditioning nodes",
+      "matches": ["ltxvconditioning"],
+      "minLen": 1,
+      "fields": [{"label": "frame_rate", "idx": 0}]
+    },
+    {
+      "_comment": "Image-to-video nodes (any) — denoise is first widget",
+      "matches": ["imgtovideo"],
+      "minLen": 1,
+      "fields": [{"label": "denoise", "idx": 0}]
+    },
+    {
+      "_comment": "Preprocessor nodes (any) — step count at first widget",
+      "matches": ["preprocess"],
+      "minLen": 1,
+      "fields": [{"label": "steps", "idx": 0}]
+    },
+    {
+      "_comment": "Resize by longest edge",
+      "matches": ["longeredge"],
+      "minLen": 1,
+      "fields": [{"label": "max_edge", "idx": 0}]
+    },
+    {
+      "_comment": "Resize image+mask nodes — mode, width, height",
+      "matches": ["resizeimagemask"],
+      "minLen": 3,
+      "fields": [
+        {"label": "mode", "idx": 0, "quote": true},
+        {"label": "w",    "idx": 1},
+        {"label": "h",    "idx": 2}
+      ]
+    },
+    {
+      "_comment": "LTX empty video latent — kept specific to avoid matching EmptyLatentImage",
+      "matches": ["emptyltxv"],
+      "minLen": 3,
+      "fields": [
+        {"label": "w",      "idx": 0},
+        {"label": "h",      "idx": 1},
+        {"label": "frames", "idx": 2}
+      ]
+    },
+    {
+      "_comment": "Trim audio to duration",
+      "matches": ["trimaudio"],
+      "minLen": 2,
+      "fields": [
+        {"label": "start",   "idx": 0},
+        {"label": "max_dur", "idx": 1}
+      ]
+    },
+    {
+      "_comment": "Solid mask — value and dimensions",
+      "matches": ["solidmask"],
+      "minLen": 3,
+      "fields": [
+        {"label": "value", "idx": 0},
+        {"label": "w",     "idx": 1},
+        {"label": "h",     "idx": 2}
+      ]
+    },
+    {
+      "_comment": "Video creation nodes",
+      "matches": ["createvideo"],
+      "minLen": 1,
+      "fields": [{"label": "fps", "idx": 0}]
+    },
+    {
+      "_comment": "LTX text-to-prompt generation — max_tokens is at index 1",
+      "matches": ["textgenerateltx"],
+      "minLen": 2,
+      "fields": [{"label": "max_tokens", "idx": 1}]
+    }
+  ]
+}

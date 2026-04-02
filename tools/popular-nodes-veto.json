@@ -1,0 +1,7 @@
+{
+  "_comment": "Nodes listed here are excluded from popular-nodes.md. Each entry: { id, reason }.",
+  "vetoed": [
+    { "id": "was-node-suite-comfyui", "reason": "retired — use was-ns fork instead" },
+    { "id": "comfyui-reactor-node", "reason": "duplicate of available wheel" }
+  ]
+}

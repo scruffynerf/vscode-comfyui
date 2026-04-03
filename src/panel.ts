@@ -77,6 +77,27 @@ export class ComfyStateProvider implements vscode.TextDocumentContentProvider {
 export const stateProvider = new ComfyStateProvider();
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Server info — written to comfyai/server-info.json on panel open
+// ---------------------------------------------------------------------------
+
+async function writeServerInfo(serverUrl: string, installDir: string, config: vscode.WorkspaceConfiguration): Promise<void> {
+    const response = await fetch(`${serverUrl}/system_stats`);
+    if (!response.ok) { return; }
+    const stats = await response.json() as any;
+    const startupArgs = config.get<string>('startupArgs', '');
+    const info = {
+        serverUrl,
+        configuredStartupArgs: `--enable-manager${startupArgs ? ' ' + startupArgs : ''}`,
+        system: stats.system ?? {},
+        devices: stats.devices ?? [],
+        updatedAt: new Date().toISOString(),
+    };
+    const outPath = path.join(installDir, 'comfyai', 'server-info.json');
+    fs.writeFileSync(outPath, JSON.stringify(info, null, 2), 'utf-8');
+}
+
+// ---------------------------------------------------------------------------
 // ComfyUIPanel — embedded webview
 // ---------------------------------------------------------------------------
 
@@ -142,13 +163,17 @@ export class ComfyUIPanel {
         const rootPath = workspaceFolders[0].uri.fsPath;
         const config = vscode.workspace.getConfiguration('comfyui');
         const serverUrl = config.get<string>('serverUrl', 'http://localhost:8188');
-        updateNodeCatalog(serverUrl, getInstallDir(rootPath)).then(result => {
+        const installDir = getInstallDir(rootPath);
+        updateNodeCatalog(serverUrl, installDir).then(result => {
             if (result && (result.added.length > 0 || result.removed.length > 0)) {
                 console.log(`[ComfyUI] Node catalog updated: +${result.added.length} -${result.removed.length}`);
             }
         }).catch(err => {
             // Server may not be running — silently skip
             console.log('[ComfyUI] Node catalog update skipped:', (err as Error).message);
+        });
+        writeServerInfo(serverUrl, installDir, config).catch(() => {
+            // Server may not be running — silently skip
         });
     }
 

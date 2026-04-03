@@ -51,14 +51,43 @@ An empty state on a fresh install is also normal. The user needs to open or crea
 
 ---
 
+## Workflow execution was interrupted
+
+If `apply-response.json` confirmed the queue but the workflow didn't produce output:
+
+1. Check the server history: `curl http://localhost:8188/history` — look for `"status": "error"` and the `messages` array.
+2. If `messages` includes `"execution_interrupted"`: **the user stopped the run manually**. This is normal. Do not re-queue without asking the user — they may have stopped it intentionally (wrong settings, changed their mind, etc.).
+3. If `messages` includes `"execution_error"`: the workflow failed (bad model, OOM, etc.). Check `user/comfyui.log` for the error.
+
+**Do not automatically re-queue after an interrupt.** Ask the user what they want to do next.
+
+---
+
+## Generation is very slow
+
+On Apple Silicon (M-series), running with `--novram` is the **recommended default**, not a degraded mode. All memory is unified (shared CPU/GPU), so `--novram` prevents swap thrashing. Generation times will be slower than CUDA benchmarks — this is expected.
+
+Typical ranges on M-series with `--novram`:
+- Flux Schnell FP8, 4 steps: ~30–60 seconds per step depending on free memory
+- More free unified memory = faster; closing other apps helps
+
+If generation seems unreasonably slow, check:
+1. `server-info.json` — look at `configuredStartupArgs` and `devices[0].vram_free` for current free memory
+2. Whether the model is being re-loaded from disk every run (check log for `Loading ...` on each queue)
+3. Step count — Flux Schnell is optimized for 1–4 steps; 20 steps is unnecessarily slow and won't improve quality
+
+---
+
 ## Server log
 
 When something fails silently, check the server log:
 
 - **Location**: `user/comfyui.log` (in the ComfyUI install directory, the same directory that contains `comfyai/`)
+- **Read efficiently**: use `tail -20 user/comfyui.log` — the file grows over time and reading the whole thing wastes context. Use `tail -50` if you need more history.
 - **What to look for**:
   - `Failed to validate prompt` — model name wrong or node not configured
-  - `Value not in list: ckpt_name: 'x.safetensors'` — model file not downloaded/installed
-  - `HTTP Request:` lines — model download progress
+  - `Value not in list: ckpt_name: 'x.safetensors'` — model not in server's known list
+  - `HTTP Request:` lines — model download in progress (may take minutes for large models)
   - `Prompt executed in X seconds` — successful run
+  - `Processing interrupted` — user stopped the run (see above)
   - `400 Bad Request` — workflow format or connection error

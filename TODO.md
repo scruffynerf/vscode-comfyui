@@ -59,6 +59,40 @@ Prioritized implementation backlog. Items are roughly ordered by: usefulness to 
 
 ---
 
+## From test session 2026-04-03 — agent evaluation round 2 (opencode, ~90 min)
+
+Full notes in `referencecode/feedback/test2/`. Confirmed: patch/queue/apply-response all work. Issues are docs/metadata/visibility gaps.
+
+### Doc fixes (no dev input needed)
+
+- ✅ **DOC: nodes/index.md dead reference** — `comfyai/README.md` and `nodes/find-a-node.md` both reference `nodes/index.md` which doesn't exist. Fixed to point to `nodes/README.md`.
+- ✅ **DOC: ts schema description** — Schema says "Unix timestamp (seconds). Use `Date.now() / 1000`." which is JS-only and implies seconds are required. Fixed: "any monotonically increasing integer".
+- ✅ **DOC: model auto-download misunderstanding** — `models.md` says "model must already be on disk" for panel use. Wrong: the hiddenswitch server auto-downloads on first use from its known list. Fixed docs to reflect actual behavior.
+- ✅ **DOC: huggingface-cli not in venv** — `models.md` references `huggingface-cli login`. Binary not in venv by default. Fixed: recommend `HF_TOKEN` env var; note CLI install is optional.
+- ✅ **DOC: execution_interrupted guidance** — No doc coverage for user-stopped workflows. Agents re-queued after a user interrupt. Added troubleshooting section distinguishing user-stop from crash.
+- ✅ **DOC: log reading — use tail** — No guidance on log size. Agent read the full log repeatedly. Added `tail -20` guidance to troubleshooting server log section.
+- ✅ **DOC: routing clarity — server already running** — Agents confused about when to use hiddenswitch Python vs. extension triggers vs. direct server API. Added explicit callout: if a server is already running, use the extension triggers or server API — don't start an embedded Python client alongside it.
+- ✅ **DOC: novram/M-series performance** — Agents had no context for why generation was slow. Added knowledge note: on Apple Silicon, `--novram` is the recommended default (unified memory, not swap), not a degraded mode. Generation times are normal; CUDA comparisons don't apply.
+
+### Model metadata (needs hiddenswitch dev input)
+
+- ⬜ **MODEL: model type metadata** — `available-models.json` has no field for AIO vs. diffusion-only vs. CLIP-only vs. VAE-only. Agent recommended Chroma1-Base (diffusion-only) as a checkpoint replacement and wasted 26min downloading it. Options: (a) annotation layer the extension merges in, (b) expose from hiddenswitch `/object_info` if the fork adds type info. **Discuss with dev.**
+- ⬜ **MODEL: model list completeness** — zimage has a VAE entry in the list but no checkpoint. Agent searched for a zimage checkpoint, found nothing, went to HuggingFace. Need a way to annotate "related/companion files" or "this is a component, not an AIO model." **Discuss with dev.** May need a curated annotation JSON the extension merges into `available-models.json`.
+- ⬜ **MODEL: model size info** — No file sizes in `available-models.json`. Agents can't assess VRAM fit before recommending a model. Source unclear — may require a separate metadata file.
+- ⬜ **MODEL: add_known_models as panel download path** — Hypothesis: call `add_known_models` + run a minimal hiddenswitch workflow (load-model → model-info) to trigger download to HF cache and symlink into `models/`. Server restart would then pick up the model. **Confirm with dev**: does embedded client actually create symlinks in `installDir/models/`? If yes, this is the cleanest download path for panel use and should be documented. If not, need `hf_hub_download` with `local_dir=installDir/models/checkpoints/`.
+
+### Server visibility / new extension features
+
+- ✅ **FEAT: server-info.json** — Written to `comfyai/server-info.json` on panel open via `/system_stats`. Schema: `{serverUrl, configuredStartupArgs, system, devices, updatedAt}`. Documented in `comfyai/README.md` and referenced in troubleshooting slow-generation section.
+- ⬜ **FEAT: model refresh command** — Agent needed to add a new model and restart the server to make it appear. On stock ComfyUI there's a hotkey to refresh model lists (no restart). **Discuss with dev**: (a) does the hiddenswitch fork expose an equivalent API endpoint? (b) what's the difference between model-list refresh vs. hot-reload (reload Python/custom nodes)? Once confirmed, either expose via extension trigger command or document the endpoint agents can call directly.
+
+### Agent behavior / proactive advice (knowledge base + docs)
+
+- ⬜ **KB: pre-flight checklist** — Before queueing, agent should check: step count appropriate for model (Flux Schnell → ≤4 steps, not 20), CFG appropriate (Flux → CFG 1), scheduler appropriate. Currently no doc guidance on this. Add a "before you queue" section to `comfyai/README.md` or a model-specific settings reference.
+- ⬜ **KB: model generation awareness** — Agent had no basis for proactively flagging model quality issues (SD1.5 vs SDXL vs Flux, age of model, typical use cases). Need knowledge base content: model families, typical quality tiers, recommended settings per family.
+
+---
+
 ## Tier 1 — High value, low complexity
 
 _(All Tier 1 items done, targeting 2.1.0 — see CHANGELOG for details.)_

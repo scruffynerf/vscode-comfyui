@@ -128,11 +128,11 @@
     "jsonValidation": [
       {
         "fileMatch": "**/comfyai/workflow-patch.json",
-        "url": "./schemas/workflow-patch.schema.json"
+        "url": "./agent-docs/comfyai/schemas/workflow-patch.schema.json"
       },
       {
         "fileMatch": "**/comfyai/apply-patch-trigger.json",
-        "url": "./schemas/apply-patch-trigger.schema.json"
+        "url": "./agent-docs/comfyai/schemas/apply-patch-trigger.schema.json"
       }
     ],
     "keybindings": [

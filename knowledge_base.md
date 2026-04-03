@@ -41,3 +41,44 @@ Classification is evaluated in priority order: Sampler → SetNode/GetNode → S
 **The retrieval model matters.** An agent satisfying a `CONDITIONING` input slot: reads index → reads `convert` and `source` category files for CONDITIONING-producing nodes → reads knowledge entry if it exists ("prefer ConditioningZeroOut unless negative conditioning is semantically important"). Lookup chain, not reading assignment.
 
 **This is a long-term build.** The Tier 1/2 catalog ships as a concrete feature. Tier 3 knowledge entries are ongoing — they compound in value, benefit from community contribution, and are the primary vehicle for encoding patterns like the zero-out conditioning example. The VibeComfy reference code is an early prototype; porting and extending it is a medium-term goal.
+
+---
+
+## Knowledge entries needed (from test session 2026-04-03)
+
+These are patterns observed in the agent test session that couldn't be derived from node schemas alone. Priority order.
+
+### Pre-flight: settings by model family
+
+Before queueing a workflow, an agent should check that the sampler settings are appropriate for the loaded model. Raw `/object_info` has no opinion on this. Entries needed:
+
+| Model family | Steps | CFG | Scheduler | Notes |
+|---|---|---|---|---|
+| Flux Schnell | 1–4 | 1.0 | simple or euler | Distilled, CFG-free. Steps > 4 waste compute with no quality gain. CFG > 1 degrades output. |
+| Flux Dev | 20–30 | 1.0 | simple or euler | Also distilled/CFG-free but higher fidelity; benefits from more steps than Schnell. |
+| SDXL | 20–30 | 7.0 | dpmpp_2m + karras | Standard settings. CFG 5–9 is the useful range. |
+| SD 1.5 | 20–30 | 7.0 | dpmpp_2m + karras | Old baseline. Use only when a LoRA or workflow specifically requires it. Output quality well below SDXL/Flux. |
+| Chroma (diffusion-only) | — | — | — | NOT an AIO checkpoint. Requires separate CLIP + VAE. Cannot be loaded via CheckpointLoaderSimple alone. |
+
+**Agent behavior**: if the currently loaded model is Flux and steps > 8 or CFG > 1.5, proactively flag this before queueing. Similarly flag SD1.5 as an older model if the user hasn't specifically requested it.
+
+### Model type taxonomy (what "checkpoint" actually means)
+
+`available-models.json` lists everything under `checkpoints` that the server knows about, but not all entries are AIO (all-in-one: model + CLIP + VAE). Types:
+
+- **AIO / full checkpoint** — loads everything via `CheckpointLoaderSimple`. Most user-friendly.
+- **Diffusion-only** (e.g. Chroma1-Base, FLUX.1 base weights) — no CLIP, no VAE. Needs companion loaders. Will error if used with `CheckpointLoaderSimple` alone.
+- **Distilled** — a subtype of AIO; uses a different sampling approach (CFG-free). Flux Schnell, Flux Dev, Lightning, etc.
+
+Before recommending a checkpoint swap, check whether the target model is AIO or requires companions. If unknown, note the uncertainty to the user. (Model type metadata is not yet in `available-models.json` — see TODO.md MODEL items.)
+
+### Apple Silicon / MPS performance expectations
+
+Running `--novram` on Apple Silicon (M1/M2/M3/M4) is the **recommended default**, not a fallback. All system memory is unified — there is no discrete VRAM. `--novram` tells ComfyUI to avoid pinning weights to the MPS device between operations, preventing swap pressure.
+
+Expected generation times on M-series with `--novram`:
+- Flux Schnell FP8, 4 steps: ~30–120 seconds total, depending on free unified memory
+- Flux Schnell FP8, 20 steps: ~4–8 minutes (wasteful; use 4 steps instead)
+- SDXL, 20 steps: ~2–4 minutes
+
+Check `server-info.json` → `devices[0].vram_free` for current free memory. More free memory = faster. Closing other apps helps. CUDA benchmark numbers do not apply to MPS.

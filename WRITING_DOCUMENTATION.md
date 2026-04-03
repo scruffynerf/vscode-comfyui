@@ -12,7 +12,7 @@ Files in `agent-docs/comfyai/` are source files. Their directory structure **mir
 
 **Never write agent documentation directly into `comfyai/` paths.** Always write in `agent-docs/comfyai/`, in the correct subdirectory. The workspace copy is ephemeral — it gets overwritten on every activation.
 
-**To add a new doc**: place it in the correct location under `agent-docs/comfyai/` and it will be deployed automatically. No `extension.ts` changes needed. The only exception is `COMFYUI_AGENT_GUIDE.md` (goes to workspace root) and `schemas/` (explicit copy), both of which are handled separately in `ensureAgentGuide()`.
+**To add a new doc**: place it in the correct location under `agent-docs/comfyai/` and it will be deployed automatically. No `extension.ts` changes needed. The only exception is `COMFYUI_AGENT_GUIDE.md` (goes to workspace root), which is handled separately in `ensureAgentGuide()`.
 
 ---
 
@@ -137,7 +137,6 @@ agent-docs/comfyai/                         deployed to → workspace comfyai/
 
 Non-comfyai files deployed separately:
 - `COMFYUI_AGENT_GUIDE.md` → workspace root
-- `schemas/*.json` → `comfyai/schemas/`
 
 When adding a new doc: place it in the right location under `agent-docs/comfyai/`. That's it.
 

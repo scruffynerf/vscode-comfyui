@@ -17,6 +17,9 @@ Before touching any file here, answer these questions in order:
 **Does this involve getting a result silently, testing code, or building/validating a custom node — with no GUI involvement at all?**
 → Yes: use **hiddenswitch Python** — ComfyUI as a library, no GUI, no server needed. See `hiddenswitch/README.md`.
 
+**Is a ComfyUI server already running (panel is open, you can see the UI)?**
+→ Use the **GUI bridge** (triggers above) or the **server HTTP API** (`http://localhost:8188/...`). Do NOT start a hiddenswitch embedded Python client alongside a running server — they are separate processes and will conflict or duplicate work.
+
 When in doubt, ask the user which they prefer before proceeding.
 
 ---
@@ -31,7 +34,8 @@ When in doubt, ask the user which they prefer before proceeding.
 | `apply-patch-trigger.json` | Write this signal to trigger the extension to apply your patch. |
 | `apply-response.json` | **Read this after every trigger write** to confirm success or get an error message. Written by the extension. |
 | `available-models.json` | Model names the server knows about: checkpoints, VAEs, LoRAs, ControlNets, etc. |
-| `nodes/` | Node catalog. Start with `nodes/index.md` when you need to select or look up a node. |
+| `server-info.json` | Server configuration: launch args, device (MPS/CUDA/CPU), VRAM, Python/torch versions. Written on panel open. |
+| `nodes/` | Node catalog. Start with `nodes/README.md` when you need to select or look up a node. |
 | `workflow-history/` | Past patch snapshots. Enter only for revert operations — see `workflow-history/README.md`. |
 | `hiddenswitch/` | Instructions for running ComfyUI as a Python library (silent execution, node dev/testing). |
 
@@ -116,7 +120,11 @@ Write any of these to `apply-patch-trigger.json`. Always increment `ts`.
 
 ## Model names
 
-Before referencing a model in a workflow, check `available-models.json` for valid names. Use the exact string. Keys present: `checkpoints`, `vae`, `loras`, `controlnet`, `upscale_models`, `clip_vision`, `unclip_models`. A key is omitted if that loader type isn't available. If the name you need isn't listed, the server can't load it — check with the user.
+Before referencing a model in a workflow, check `available-models.json` for valid names. Use the exact string. Keys present: `checkpoints`, `vae`, `loras`, `controlnet`, `upscale_models`, `clip_vision`, `unclip_models`. A key is omitted if that loader type isn't available.
+
+**Models in this list will be auto-downloaded on first use.** The hiddenswitch server manages its own known-model list and fetches models as needed when a workflow runs. A model appearing in `available-models.json` does not mean it's already on disk — it means the server knows how to get it.
+
+If the name you need isn't listed, the server can't load it. In that case, check with the user — they may need to download the model manually.
 
 ---
 

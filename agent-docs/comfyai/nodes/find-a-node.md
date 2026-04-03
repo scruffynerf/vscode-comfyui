@@ -11,8 +11,8 @@ Work through these steps in order. Stop as soon as you find what you need.
 The user may already have a node installed that does this.
 
 Start with the human-readable catalog:
-- [comfyai/nodes/index.md](index.md) — full list of installed node class types
-- `comfyai/nodes/<category>.md` — nodes grouped by category (source, sampler, etc.) — generated at runtime, filename matches class name
+- [comfyai/nodes/README.md](README.md) — entry point: lists the ten node classes with links to each class file
+- `comfyai/nodes/classes/<class>.md` — nodes grouped by class (source, sampler, etc.) — generated at runtime
 
 If the category files don't answer the question, search the raw registry by keyword:
 ```bash

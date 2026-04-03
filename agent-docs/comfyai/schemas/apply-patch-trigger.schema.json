@@ -7,7 +7,7 @@
   "properties": {
     "ts": {
       "type": "number",
-      "description": "Unix timestamp (seconds). Must change on every write — this is what triggers the file watcher. Use Date.now() / 1000."
+      "description": "Any monotonically increasing integer. Must change on every write — this is what triggers the file watcher. Seconds, milliseconds, or any counter all work. Example: Date.now() in JS, int(time.time()) in Python, or just increment a counter."
     },
     "patchPath": {
       "type": "string",
@@ -19,8 +19,8 @@
     },
     "command": {
       "type": "string",
-      "enum": ["queue", "interrupt"],
-      "description": "Server command to execute. 'queue' submits the current workflow for generation; 'interrupt' stops the running generation. Mutually exclusive with patchPath and sourcePath."
+      "enum": ["queue", "interrupt", "auto-layout"],
+      "description": "Command to execute. 'queue' submits the current workflow for generation; 'interrupt' stops the running generation; 'auto-layout' arranges all nodes left-to-right (note: groups are not repositioned). Mutually exclusive with patchPath and sourcePath."
     }
   },
   "additionalProperties": false

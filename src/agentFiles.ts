@@ -44,7 +44,6 @@ export function ensureAgentGuide(context: vscode.ExtensionContext) {
     const installDir = getInstallDir(rootPath);
     const extPath = context.extensionPath;
     const comfyaiDir = path.join(installDir, 'comfyai');
-    const schemasDir = path.join(comfyaiDir, 'schemas');
     const config = vscode.workspace.getConfiguration('comfyui');
     const venvDir = config.get<string>('venvDir', '.venv');
     const vars: Record<string, string> = { installDir, venv: venvDir };
@@ -58,12 +57,6 @@ export function ensureAgentGuide(context: vscode.ExtensionContext) {
     try {
         // Deploy all agent docs: agent-docs/comfyai/ mirrors workspace comfyai/
         copyDirRecursive(path.join(extPath, 'agent-docs/comfyai'), comfyaiDir, vars);
-
-        // Deploy schemas (separate source directory)
-        fs.mkdirSync(schemasDir, { recursive: true });
-        for (const schema of ['workflow-patch.schema.json', 'apply-patch-trigger.schema.json']) {
-            fs.copyFileSync(path.join(extPath, 'schemas', schema), path.join(schemasDir, schema));
-        }
 
         // Deploy top-level guide into the install dir (with substitutions)
         let guideContent = fs.readFileSync(path.join(extPath, 'COMFYUI_AGENT_GUIDE.md'), 'utf-8');

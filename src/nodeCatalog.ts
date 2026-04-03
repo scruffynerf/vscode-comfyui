@@ -384,6 +384,13 @@ function writeCatalog(objectInfo: Record<string, any>, rootPath: string, serverU
     };
     atomicWrite(path.join(extDir, 'nodes-manifest.json'), JSON.stringify(manifest, null, 2));
 
+    // Signal file agents can poll to know the refresh is complete.
+    // Compare the `completedAt` timestamp against when you triggered the refresh.
+    atomicWrite(
+        path.join(extDir, 'catalog-refresh-timestamp.json'),
+        JSON.stringify({ completedAt: new Date().toISOString(), nodeCount: entries.length }, null, 2)
+    );
+
     return manifest;
 }
 

@@ -2,9 +2,11 @@
 
 You've been asked to work with the user's ComfyUI setup.
 
-**Everything you need is in `comfyai/` in the same directory as this file (the ComfyUI install directory).**
+**Read this file for orientation, then stop and ask the user what they want before reading anything else.**
 
-Start with [`comfyai/README.md`](comfyai/README.md) for the complete protocol. That file is the single source of truth for agent interaction — the other READMEs in `comfyai/nodes/`, `comfyai/hiddenswitch/`, etc. are task-specific sub-docs that `comfyai/README.md` routes you to.
+The sub-docs (`comfyai/README.md`, `comfyai/nodes/`, `comfyai/hiddenswitch/`, etc.) are large. Read only what your current task requires — don't pre-read them speculatively. The quick reference table below tells you exactly where to go once you have a task.
+
+Everything you need is in `comfyai/` in the same directory as this file (the ComfyUI install directory). [`comfyai/README.md`](comfyai/README.md) is the complete protocol and the single source of truth for agent interaction.
 
 ---
 

@@ -4,6 +4,32 @@ Prioritized implementation backlog. Items are roughly ordered by: usefulness to 
 
 ---
 
+## From test session 2026-04-03 — agent feedback (test3, ~70 min evaluation)
+
+### Doc fixes (all ✅ done)
+
+- ✅ **DOC: workflow-summary.md staleness** — Agents were answering state questions from their cached in-context copy of `workflow-summary.md` (which updates on every panel change) rather than re-reading it. Added explicit warning to `comfyai/README.md` "Reading state efficiently" section: cached copies go stale, always re-read the file.
+- ✅ **FIX: server restart now auto-refreshes node catalog** — `restartServer` command in `extension.ts` waited for the server to become responsive but never called `triggerCatalogUpdate`. Added `ComfyUIPanel.triggerCatalogUpdate()` in both `becameResponsive` branches. Docs updated: restart is now a single step, no separate catalog refresh needed.
+- ✅ **DOC: class name ≠ registered type name** — No guidance that a node's Python class name may differ from its registered `type` (e.g., `RemBGSession` vs `RemBGSession+`). Added warning to `nodes/README.md`: always verify the exact type key in `node-registry.json` after a catalog refresh.
+- ✅ **DOC: uv pip with non-.venv venv** — `uv pip install` auto-detects `.venv/` but fails silently when the venv is named `venv/`. Added `--python {venv}/bin/python` flag example to `install-custom-nodes.md`.
+- ✅ **DOC: appmana index fallback** — No guidance when `nodes.appmana.com` is unreachable. Added: "If the index is unreachable, fall back to git install" with pointer to the git section.
+- ✅ **DOC: links dropped on node type correction** — Undocumented: correcting a node's `type` in a patch drops existing links. Added warning to `comfyai/README.md` patch section.
+- ✅ **DOC: link IDs reassigned by extension** — Agents specified link IDs in patches; extension silently assigned different ones. Added note to `comfyai/README.md`: IDs in patches are ignored, re-read state to get actual IDs.
+
+### Feature items
+
+- ✅ **FEAT: echo trigger `ts` in apply-response.json** — Added `trigger_ts` field to every `apply-response.json`. Threaded `signalData.ts` through all `writeApplyResponse` calls in `patchBridge.ts`.
+- ✅ **FEAT: execution result visibility (option B)** — Documented `GET http://localhost:8188/history` in `troubleshooting.md` with a curl snippet and response structure. Queue response message now also contains the reminder to poll `/history`. No extension code needed.
+- ✅ **FEAT: agent testing mode** — New `testing-mode` command in trigger file. Sets a log directory; every subsequent `apply-response.json` includes `log_file` (per-action filename keyed to `trigger_ts`) and a `testing_reminder` prompting comprehensive logging of everything since the last entry. Each log entry is a new Write, no read needed.
+- ✅ **FEAT: catalog refresh completion signal** — `writeCatalog` in `nodeCatalog.ts` now writes `comfyai/_extension/catalog-refresh-timestamp.json` (`{completedAt, nodeCount}`) after every full build. Agents compare `completedAt` against their action time to confirm the refresh is done. Documented in `nodes/README.md`.
+
+### Behavior / doc items
+
+- ⬜ **BUG: links dropped on node type correction (code)** — Documented in patch docs (warning added to `comfyai/README.md`). Root cause: LiteGraph frontend drops links when a node's registered type changes — happens in the frontend, not in `mergeWorkflows`. Investigate: can `applyPatch` bridge JS re-attach links after a type correction, or is this fundamental to LiteGraph's connection validation? **Backburnered** — doc warning is the mitigation for now.
+- ✅ **DOC: agent entry point gate** — Agents consistently read all docs before receiving a task. Added explicit gate to `COMFYUI_AGENT_GUIDE.md`: "Read this for orientation, then stop and ask the user what they want before reading anything else."
+
+---
+
 ## From test session 2026-04-03 — agent feedback (opencode, ~45 min evaluation)
 
 ### P1 — Critical bugs (core feature broken)

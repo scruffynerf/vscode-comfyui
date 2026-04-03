@@ -45,7 +45,7 @@ Each entry shows which specific node names matched, so you can confirm fit befor
 {installDir}/{venv}/bin/comfyui workflows requirements path/to/workflow.json
 ```
 
-If you find what's needed: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../hiddenswitch/install-custom-nodes.md), then tell the user to restart their server. You're done here.
+If you find what's needed: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../hiddenswitch/install-custom-nodes.md), then tell the user to restart the ComfyUI server. The extension refreshes the node catalog automatically once the server is back up. You're done here.
 
 ---
 
@@ -94,7 +94,7 @@ If you find a match: install it using [comfyai/hiddenswitch/install-custom-nodes
 
 If the local indexes returned nothing, ask the user to search [Comfy Registry](https://comfyregistry.org) directly — it covers the full 4000+ pack catalog and is updated more frequently than the local index.
 
-If you find what's needed: install it, tell the user to restart their server. You're done here.
+If you find what's needed: install it, then tell the user to restart the ComfyUI server. The extension refreshes the node catalog automatically. You're done here.
 
 ---
 

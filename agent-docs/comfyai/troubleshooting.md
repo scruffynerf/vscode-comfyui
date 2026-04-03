@@ -51,6 +51,35 @@ An empty state on a fresh install is also normal. The user needs to open or crea
 
 ---
 
+## Checking whether a queued workflow succeeded
+
+`apply-response.json` confirms the queue command was received — it does not know whether generation succeeded. To check:
+
+```bash
+curl http://localhost:8188/history
+```
+
+The response is a dict keyed by prompt ID. The most recent entry has:
+- `status.status_str`: `"success"` or `"error"`
+- `status.completed`: `true` / `false`
+- `status.messages`: list including `"execution_start"`, `"execution_cached"`, `"execution_success"`, `"execution_error"`, or `"execution_interrupted"`
+- `outputs`: dict of node outputs (images, etc.) — only present on success
+
+For a quick check of just the most recent run:
+```bash
+curl -s http://localhost:8188/history | python3 -c "
+import json, sys
+h = json.load(sys.stdin)
+if not h:
+    print('No history')
+else:
+    latest = list(h.values())[-1]
+    print(latest['status']['status_str'], latest['status']['messages'])
+"
+```
+
+---
+
 ## Workflow execution was interrupted
 
 If `apply-response.json` confirmed the queue but the workflow didn't produce output:

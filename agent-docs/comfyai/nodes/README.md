@@ -93,11 +93,19 @@ for k, v in data.items():
 
 **What you get back:** the full node definition — all required/optional inputs with types and defaults, all outputs with types, and the `output_node` flag.
 
+**The registered type name is the key in `node-registry.json` — use that exact string in patches.** It may differ from the Python class name in the node's source code. For example, a class named `RemBGSession` may register as `RemBGSession+`. Always look up the node in the registry after a catalog refresh to confirm the correct type name before using it in a patch.
+
 ---
 
 ## If the catalog is missing or stale
 
-Run `ComfyUI: Refresh Node Catalog` from the command palette. The catalog also updates automatically when the panel opens if the server is running.
+The catalog updates automatically when the panel opens and when the server restarts via the **Start ComfyUI** command. To force an immediate update, run `ComfyUI: Refresh Node Catalog` from the command palette.
+
+**To confirm the refresh has completed**, read `comfyai/_extension/catalog-refresh-timestamp.json`:
+```json
+{ "completedAt": "2026-04-03T19:00:00.000Z", "nodeCount": 312 }
+```
+Compare `completedAt` against when you triggered the refresh. If `completedAt` is newer, the catalog is current and `node-registry.json` is safe to query.
 
 ---
 

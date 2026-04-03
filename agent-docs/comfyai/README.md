@@ -64,6 +64,10 @@ Nodes are merged by `id` into the current graph. Only include what changes — u
 Adding a new node? Use an `id` greater than `last_node_id` from `workflow-state.readonly.json`.
 Adding a new link? Use a `link_id` greater than `last_link_id`. Links are arrays: `[link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]`.
 
+**Link IDs are reassigned.** The extension assigns its own IDs using the internal `last_link_id` counter — the IDs you specify in a patch are not preserved. After adding links, re-read `workflow-state.readonly.json` to get the actual assigned IDs if you need to reference them later.
+
+**Correcting a node's `type` drops its links.** If you patch a node to fix its type name, the extension may drop existing links to/from that node because it can't validate them against the new type. After any type correction, verify the node's links in `workflow-state.readonly.json` and add a second patch to reconnect any that were dropped.
+
 ### Step 2 — Trigger the apply
 
 Write this signal to `apply-patch-trigger.json`:
@@ -105,6 +109,14 @@ Write any of these to `apply-patch-trigger.json`. Always increment `ts`.
 | `{"command": "queue", "ts": n}` | Run the workflow currently loaded in the panel |
 | `{"command": "interrupt", "ts": n}` | Stop an in-progress generation |
 | `{"command": "auto-layout", "ts": n}` | Auto-arrange all nodes (left-to-right, removes overlaps) |
+| `{"command": "testing-mode", "logPath": "feedback/testN", "ts": n}` | Enable testing reminders — every `apply-response.json` will include a `log_file` (e.g. `feedback/testN/log-1005.md`) and a `testing_reminder` telling you exactly what to write there |
+| `{"command": "testing-mode", "enabled": false, "ts": n}` | Disable testing reminders |
+
+**After queueing:** the extension confirms the trigger was received, but not whether the workflow actually succeeded. To check execution status, poll:
+```
+GET http://localhost:8188/history
+```
+Look for the most recent entry: `status.status_str` will be `"success"` or `"error"`, and `status.messages` will include `"execution_error"` or `"execution_interrupted"` if something went wrong. See `troubleshooting.md` for how to interpret the result.
 
 **Auto-layout warning**: groups are not repositioned. If the workflow has groups, nodes will move out of their group boundaries, leaving the layout broken. Either fix the group bounds afterward with a patch (compute new `bounding` from the updated node positions), or skip auto-layout and set `pos` manually on just the nodes you want to move.
 
@@ -114,7 +126,8 @@ Write any of these to `apply-patch-trigger.json`. Always increment `ts`.
 
 1. Read `workflow-summary.md` first — it has node IDs for common tasks so you don't need to scan the full graph.
 2. If you need a specific node's full detail, read `workflow-state.readonly.json` and look up by `id`.
-3. After a successful patch, `workflow-state.readonly.json` updates automatically — you don't need to re-read unless you need to verify a specific value.
+3. After a successful patch, both `workflow-state.readonly.json` and `workflow-summary.md` update automatically once the change is reflected in the panel.
+4. **Do not use a cached copy of `workflow-summary.md` from earlier in your context.** Re-read the file when you need current state — your cached version becomes stale as soon as the user or agent applies any patch.
 
 ---
 

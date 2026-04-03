@@ -89,17 +89,38 @@ export function saveHistory(rootPath: string, signalTs: number | undefined, patc
 // Apply-response writer
 // ---------------------------------------------------------------------------
 
-function writeApplyResponse(installDir: string, status: 'ok' | 'error', message: string) {
+// When set, every apply-response includes a testing_reminder with a per-action log filename.
+let testingLogDir: string | null = null;
+
+function writeApplyResponse(installDir: string, status: 'ok' | 'error', message: string, triggerTs?: number) {
     try {
         const comfyaiDir = path.join(installDir, 'comfyai');
         fs.mkdirSync(comfyaiDir, { recursive: true });
         const responsePath = path.join(comfyaiDir, 'apply-response.json');
         const tmp = responsePath + '.tmp';
-        fs.writeFileSync(tmp, JSON.stringify({
+        const payload: any = {
             status,
             ts: Date.now(),
             message,
-        }, null, 2), 'utf-8');
+        };
+        if (triggerTs !== undefined) {
+            payload.trigger_ts = triggerTs;
+        }
+        if (testingLogDir) {
+            const logFile = `${testingLogDir}/log-${triggerTs ?? payload.ts}.md`;
+            payload.log_file = logFile;
+            payload.testing_reminder = [
+                `STOP. Write ${logFile} now (use the Write tool — no read needed, just create it).`,
+                `Include EVERYTHING since your last log entry:`,
+                `- What you were trying to do and why`,
+                `- What you did (exact files written, commands run, content sent)`,
+                `- What happened (exact response, output, or error — quote it)`,
+                `- Anything confusing, surprising, or broken`,
+                `- Any question you had to ask the user, and why you needed to ask`,
+                `Do this before continuing. Skipping it loses data we need.`,
+            ].join(' ');
+        }
+        fs.writeFileSync(tmp, JSON.stringify(payload, null, 2), 'utf-8');
         fs.renameSync(tmp, responsePath);
     } catch (err) {
         console.error('[ComfyUI] Failed to write apply-response.json:', err);
@@ -146,15 +167,32 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                 const signalContent = fs.readFileSync(signalPath, 'utf-8');
                 const signalData = JSON.parse(signalContent);
 
+                const triggerTs: number | undefined = typeof signalData?.ts === 'number' ? signalData.ts : undefined;
+
+                if (signalData && signalData.command === 'testing-mode') {
+                    // TESTING MODE — latch or clear the log directory for per-action log file reminders
+                    if (signalData.enabled === false) {
+                        testingLogDir = null;
+                        writeApplyResponse(installDir, 'ok', 'Testing mode disabled', triggerTs);
+                    } else if (typeof signalData.logPath === 'string') {
+                        testingLogDir = signalData.logPath;
+                        writeApplyResponse(installDir, 'ok', `Testing mode enabled — each response will specify a log file in ${testingLogDir}/`, triggerTs);
+                    } else {
+                        writeApplyResponse(installDir, 'error', 'testing-mode requires logPath (string) or enabled: false', triggerTs);
+                    }
+                    resetStatus();
+                    return;
+                }
+
                 if (signalData && signalData.command === 'interrupt') {
                     // INTERRUPT MODE — stop current generation
                     const serverUrl = vscode.workspace.getConfiguration('comfyui').get<string>('serverUrl', 'http://localhost:8188');
                     const resp = await fetch(`${serverUrl}/interrupt`, { method: 'POST' });
                     if (!resp.ok) {
                         vscode.window.showErrorMessage(`ComfyUI: Interrupt failed (${resp.status})`);
-                        writeApplyResponse(installDir, 'error', `Interrupt failed: HTTP ${resp.status}`);
+                        writeApplyResponse(installDir, 'error', `Interrupt failed: HTTP ${resp.status}`, triggerTs);
                     } else {
-                        writeApplyResponse(installDir, 'ok', 'Generation interrupted');
+                        writeApplyResponse(installDir, 'ok', 'Generation interrupted', triggerTs);
                     }
                     setStatus('$(stop) ComfyUI: Interrupted');
                     setTimeout(resetStatus, 2000);
@@ -165,11 +203,11 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     // QUEUE MODE — forward to the ComfyUI panel (bridge node calls app.queuePrompt)
                     if (ComfyUIPanel.currentPanel) {
                         ComfyUIPanel.currentPanel.queueWorkflow();
-                        writeApplyResponse(installDir, 'ok', 'Workflow queued');
+                        writeApplyResponse(installDir, 'ok', 'Workflow queued — poll GET http://localhost:8188/history to check execution result', triggerTs);
                         setStatus('$(play) ComfyUI: Queued');
                         setTimeout(resetStatus, 2000);
                     } else {
-                        writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again');
+                        writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again', triggerTs);
                     }
                     return;
                 }
@@ -177,11 +215,11 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                 if (signalData && signalData.command === 'auto-layout') {
                     if (ComfyUIPanel.currentPanel) {
                         ComfyUIPanel.currentPanel.autoLayout();
-                        writeApplyResponse(installDir, 'ok', 'Auto-layout applied');
+                        writeApplyResponse(installDir, 'ok', 'Auto-layout applied', triggerTs);
                         setStatus('$(layout) ComfyUI: Layout applied');
                         setTimeout(resetStatus, 2000);
                     } else {
-                        writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again');
+                        writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again', triggerTs);
                     }
                     return;
                 }
@@ -204,7 +242,7 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                         const baseState = stateProvider.getState();
                         workflowData = mergeWorkflows(baseState, patchData);
                     } else {
-                        writeApplyResponse(installDir, 'error', `patchPath not found: ${signalData.patchPath}`);
+                        writeApplyResponse(installDir, 'error', `patchPath not found: ${signalData.patchPath}`, triggerTs);
                         resetStatus();
                         return;
                     }
@@ -218,7 +256,7 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                         const workflowContent = fs.readFileSync(fullSourcePath, 'utf-8');
                         workflowData = JSON.parse(workflowContent);
                     } else {
-                        writeApplyResponse(installDir, 'error', `sourcePath not found: ${signalData.sourcePath}`);
+                        writeApplyResponse(installDir, 'error', `sourcePath not found: ${signalData.sourcePath}`, triggerTs);
                         resetStatus();
                         return;
                     }
@@ -230,20 +268,20 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                         // Patch mode: in-place updates via LiteGraph API — no loadGraphData,
                         // no new tab. New nodes use LiteGraph.createNode() + graph.add().
                         ComfyUIPanel.currentPanel.applyPatch(patchData);
-                        writeApplyResponse(installDir, 'ok', `Patch applied: ${patchData.nodes?.length ?? 0} node(s), ${patchData.links?.length ?? 0} link(s)`);
+                        writeApplyResponse(installDir, 'ok', `Patch applied: ${patchData.nodes?.length ?? 0} node(s), ${patchData.links?.length ?? 0} link(s)`, triggerTs);
                     } else {
                         // Full workflow mode (sourcePath): intentional full replacement.
                         ComfyUIPanel.currentPanel.updateComfyState(workflowData);
-                        writeApplyResponse(installDir, 'ok', 'Full workflow loaded');
+                        writeApplyResponse(installDir, 'ok', 'Full workflow loaded', triggerTs);
                     }
                 } else if (workflowData && !ComfyUIPanel.currentPanel) {
-                    writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again');
+                    writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again', triggerTs);
                 }
                 resetStatus();
             } catch (err) {
                 // Silently ignore malformed JSON during writes (file may be mid-write)
                 try {
-                    writeApplyResponse(installDir, 'error', `Extension error: ${String(err)}`);
+                    writeApplyResponse(installDir, 'error', `Extension error: ${String(err)}`, triggerTs);
                 } catch { /* ignore */ }
                 resetStatus();
             }

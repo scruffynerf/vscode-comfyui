@@ -19,8 +19,16 @@
     },
     "command": {
       "type": "string",
-      "enum": ["queue", "interrupt", "auto-layout"],
-      "description": "Command to execute. 'queue' submits the current workflow for generation; 'interrupt' stops the running generation; 'auto-layout' arranges all nodes left-to-right (note: groups are not repositioned). Mutually exclusive with patchPath and sourcePath."
+      "enum": ["queue", "interrupt", "auto-layout", "testing-mode"],
+      "description": "Command to execute. 'queue' submits the current workflow for generation; 'interrupt' stops the running generation; 'auto-layout' arranges all nodes left-to-right (note: groups are not repositioned); 'testing-mode' enables/disables testing reminders in apply-response.json. Mutually exclusive with patchPath and sourcePath."
+    },
+    "logPath": {
+      "type": "string",
+      "description": "Used with command 'testing-mode'. Path to the log directory (e.g. 'feedback/test4'). Each apply-response.json will include a log_file field naming a new per-action file to write (e.g. 'feedback/test4/log-1001.md'), plus a testing_reminder prompting comprehensive logging."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Used with command 'testing-mode'. Set to false to disable testing mode and stop reminders. Omit or set to true when enabling."
     }
   },
   "additionalProperties": false

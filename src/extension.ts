@@ -124,6 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
 					const becameResponsive = await waitForServer(url, 1000, timeout);
 					if (becameResponsive) {
 						vscode.commands.executeCommand('comfyui.openReloadEditor');
+						ComfyUIPanel.triggerCatalogUpdate();
 					} else {
 						vscode.window.showErrorMessage(
 							'Server restart triggered, but ComfyUI did not become responsive before timeout.'
@@ -149,6 +150,7 @@ export function activate(context: vscode.ExtensionContext) {
 					const becameResponsive = await waitForServer(url, 1000, timeout);
 					if (becameResponsive) {
 						vscode.commands.executeCommand('comfyui.openReloadEditor');
+						ComfyUIPanel.triggerCatalogUpdate();
 					} else {
 						vscode.window.showErrorMessage(
 							'Server restart triggered, but ComfyUI did not become responsive before timeout.'

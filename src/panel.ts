@@ -164,8 +164,17 @@ export class ComfyUIPanel {
         this._panel.webview.postMessage({ command: 'updateComfyState', workflowData });
     }
 
+    /** Apply a partial patch in-place (avoids loadGraphData / new-tab creation). */
+    public applyPatch(patch: any) {
+        this._panel.webview.postMessage({ command: 'applyPatch', patch });
+    }
+
     public queueWorkflow() {
         this._panel.webview.postMessage({ command: 'queueWorkflow' });
+    }
+
+    public autoLayout() {
+        this._panel.webview.postMessage({ command: 'autoLayout' });
     }
 
     private _getWebviewContent() {
@@ -207,7 +216,7 @@ export class ComfyUIPanel {
                     // Listen for messages from VS Code and pass to the iframe (ComfyUI)
                     window.addEventListener('message', event => {
                         const cmd = event.data && event.data.command;
-                        if (cmd === 'updateComfyState' || cmd === 'queueWorkflow') {
+                        if (cmd === 'updateComfyState' || cmd === 'applyPatch' || cmd === 'queueWorkflow' || cmd === 'autoLayout') {
                             const iframe = document.querySelector('iframe');
                             if (iframe && iframe.contentWindow) {
                                 iframe.contentWindow.postMessage(event.data, '*');

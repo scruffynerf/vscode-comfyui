@@ -25,13 +25,83 @@ app.registerExtension({
         console.log("[VSCode Bridge] Initializing two-way integration...");
 
         window.addEventListener("message", async (event) => {
-            if (event.data && event.data.command === "updateComfyState") {
+            const cmd = event.data && event.data.command;
+
+            if (cmd === "updateComfyState") {
+                // Full workflow replacement (sourcePath mode). loadGraphData is
+                // intentional here — the user explicitly loaded a new workflow.
                 if (event.data.workflowData) {
                     try {
                         await app.loadGraphData(event.data.workflowData);
                     } catch (err) {
-                        console.error("[VSCode Bridge] Error loading:", err);
+                        console.error("[VSCode Bridge] Error loading workflow:", err);
                     }
+                }
+            }
+
+            if (cmd === "applyPatch") {
+                // Patch mode — apply changes directly via LiteGraph API to avoid
+                // loadGraphData(), which always creates a new tab via beforeLoadNewGraph().
+                const patch = event.data.patch;
+
+                // Update or add nodes
+                if (patch && patch.nodes && Array.isArray(patch.nodes)) {
+                    for (const pNode of patch.nodes) {
+                        let node = app.graph.getNodeById(pNode.id);
+
+                        if (!node && pNode.type) {
+                            // New node — create via LiteGraph and add to current graph
+                            node = LiteGraph.createNode(pNode.type);
+                            if (node) {
+                                node.id = pNode.id;
+                                app.graph.add(node);
+                            }
+                        }
+
+                        if (node) {
+                            if (pNode.pos !== undefined) { node.pos[0] = pNode.pos[0]; node.pos[1] = pNode.pos[1]; }
+                            if (pNode.size !== undefined) { node.size[0] = pNode.size[0]; node.size[1] = pNode.size[1]; }
+                            if (pNode.color !== undefined) { node.color = pNode.color; }
+                            if (pNode.bgcolor !== undefined) { node.bgcolor = pNode.bgcolor; }
+                            if (pNode.title !== undefined) { node.title = pNode.title; }
+                            if (pNode.widgets_values !== undefined && node.widgets) {
+                                for (let i = 0; i < Math.min(pNode.widgets_values.length, node.widgets.length); i++) {
+                                    node.widgets[i].value = pNode.widgets_values[i];
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Add new links via LiteGraph connect()
+                // Links are arrays: [link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]
+                if (patch && patch.links && Array.isArray(patch.links)) {
+                    for (const link of patch.links) {
+                        const [, srcNodeId, srcSlot, dstNodeId, dstSlot] = link;
+                        const srcNode = app.graph.getNodeById(srcNodeId);
+                        if (srcNode) {
+                            srcNode.connect(srcSlot, dstNodeId, dstSlot);
+                        } else {
+                            console.warn("[VSCode Bridge] applyPatch: src node not found for link:", link);
+                        }
+                    }
+                }
+
+                app.graph.setDirtyCanvas(true, true);
+            }
+
+            if (cmd === "queueWorkflow") {
+                try {
+                    await app.queuePrompt(0, 1);
+                } catch (err) {
+                    console.error("[VSCode Bridge] Error queuing workflow:", err);
+                }
+            }
+
+            if (cmd === "autoLayout") {
+                if (app.graph && app.graph.arrange) {
+                    app.graph.arrange();
+                    app.graph.setDirtyCanvas(true, true);
                 }
             }
         });

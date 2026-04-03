@@ -86,6 +86,27 @@ export function saveHistory(rootPath: string, signalTs: number | undefined, patc
 }
 
 // ---------------------------------------------------------------------------
+// Apply-response writer
+// ---------------------------------------------------------------------------
+
+function writeApplyResponse(installDir: string, status: 'ok' | 'error', message: string) {
+    try {
+        const comfyaiDir = path.join(installDir, 'comfyai');
+        fs.mkdirSync(comfyaiDir, { recursive: true });
+        const responsePath = path.join(comfyaiDir, 'apply-response.json');
+        const tmp = responsePath + '.tmp';
+        fs.writeFileSync(tmp, JSON.stringify({
+            status,
+            ts: Date.now(),
+            message,
+        }, null, 2), 'utf-8');
+        fs.renameSync(tmp, responsePath);
+    } catch (err) {
+        console.error('[ComfyUI] Failed to write apply-response.json:', err);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Apply-patch file watcher
 // ---------------------------------------------------------------------------
 
@@ -131,6 +152,9 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     const resp = await fetch(`${serverUrl}/interrupt`, { method: 'POST' });
                     if (!resp.ok) {
                         vscode.window.showErrorMessage(`ComfyUI: Interrupt failed (${resp.status})`);
+                        writeApplyResponse(installDir, 'error', `Interrupt failed: HTTP ${resp.status}`);
+                    } else {
+                        writeApplyResponse(installDir, 'ok', 'Generation interrupted');
                     }
                     setStatus('$(stop) ComfyUI: Interrupted');
                     setTimeout(resetStatus, 2000);
@@ -141,8 +165,23 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     // QUEUE MODE — forward to the ComfyUI panel (bridge node calls app.queuePrompt)
                     if (ComfyUIPanel.currentPanel) {
                         ComfyUIPanel.currentPanel.queueWorkflow();
+                        writeApplyResponse(installDir, 'ok', 'Workflow queued');
                         setStatus('$(play) ComfyUI: Queued');
                         setTimeout(resetStatus, 2000);
+                    } else {
+                        writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again');
+                    }
+                    return;
+                }
+
+                if (signalData && signalData.command === 'auto-layout') {
+                    if (ComfyUIPanel.currentPanel) {
+                        ComfyUIPanel.currentPanel.autoLayout();
+                        writeApplyResponse(installDir, 'ok', 'Auto-layout applied');
+                        setStatus('$(layout) ComfyUI: Layout applied');
+                        setTimeout(resetStatus, 2000);
+                    } else {
+                        writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again');
                     }
                     return;
                 }
@@ -164,6 +203,10 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                         patchData = JSON.parse(patchContent);
                         const baseState = stateProvider.getState();
                         workflowData = mergeWorkflows(baseState, patchData);
+                    } else {
+                        writeApplyResponse(installDir, 'error', `patchPath not found: ${signalData.patchPath}`);
+                        resetStatus();
+                        return;
                     }
                 } else if (signalData && signalData.sourcePath) {
                     // FULL WORKFLOW MODE
@@ -174,16 +217,34 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     if (fs.existsSync(fullSourcePath)) {
                         const workflowContent = fs.readFileSync(fullSourcePath, 'utf-8');
                         workflowData = JSON.parse(workflowContent);
+                    } else {
+                        writeApplyResponse(installDir, 'error', `sourcePath not found: ${signalData.sourcePath}`);
+                        resetStatus();
+                        return;
                     }
                 }
 
                 if (workflowData && ComfyUIPanel.currentPanel) {
                     saveHistory(installDir, signalData.ts, patchData, stateProvider.getState());
-                    ComfyUIPanel.currentPanel.updateComfyState(workflowData);
+                    if (patchData) {
+                        // Patch mode: in-place updates via LiteGraph API — no loadGraphData,
+                        // no new tab. New nodes use LiteGraph.createNode() + graph.add().
+                        ComfyUIPanel.currentPanel.applyPatch(patchData);
+                        writeApplyResponse(installDir, 'ok', `Patch applied: ${patchData.nodes?.length ?? 0} node(s), ${patchData.links?.length ?? 0} link(s)`);
+                    } else {
+                        // Full workflow mode (sourcePath): intentional full replacement.
+                        ComfyUIPanel.currentPanel.updateComfyState(workflowData);
+                        writeApplyResponse(installDir, 'ok', 'Full workflow loaded');
+                    }
+                } else if (workflowData && !ComfyUIPanel.currentPanel) {
+                    writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again');
                 }
                 resetStatus();
             } catch (err) {
-                // Silently ignore malformed JSON during writes
+                // Silently ignore malformed JSON during writes (file may be mid-write)
+                try {
+                    writeApplyResponse(installDir, 'error', `Extension error: ${String(err)}`);
+                } catch { /* ignore */ }
                 resetStatus();
             }
         }, 250);
@@ -191,6 +252,19 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
 
     watcher.onDidChange(handleUpdate);
     watcher.onDidCreate(handleUpdate);
+
+    // Cold-start check: if the trigger file is newer than the last response, the watcher
+    // may have missed a write that happened before this activation. Process it now.
+    (async () => {
+        if (!fs.existsSync(signalPath)) { return; }
+        const triggerMtime = fs.statSync(signalPath).mtimeMs;
+        const responsePath = path.join(installDir, 'comfyai', 'apply-response.json');
+        if (fs.existsSync(responsePath)) {
+            const responseMtime = fs.statSync(responsePath).mtimeMs;
+            if (triggerMtime <= responseMtime) { return; }
+        }
+        await handleUpdate();
+    })();
 
     return new vscode.Disposable(() => {
         if (debounceTimer) { clearTimeout(debounceTimer); }

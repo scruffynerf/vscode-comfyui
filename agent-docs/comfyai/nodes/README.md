@@ -10,7 +10,7 @@ Use this directory to find and understand available nodes. Read this before open
 
 **Step 2 — Read the one class file you need** (`classes/source.md`, `classes/sampler.md`, `classes/variable.md`, etc.). Each entry shows: node type, one-line purpose, key inputs → key outputs. Read the class relevant to your current decision — not all of them.
 
-**Step 3 — Query `node-registry.json` by key for full schema.** Do not read the whole file — it contains every registered node and will exhaust your context. Access a specific node by its type name key only.
+**Step 3 — Query `node-registry.json` by key for full schema.** Do not read the whole file — it is typically ~1.8 MB / ~450k tokens and will exhaust your context. Access a specific node by its type name key only.
 
 ---
 

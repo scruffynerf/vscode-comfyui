@@ -6,16 +6,17 @@ This directory is your interface to the user's ComfyUI workflow. Read this befor
 
 ## Which mode should you use?
 
-Before touching any file here, answer two questions:
+Before touching any file here, answer these questions in order:
 
 **Does the user want to see this change in their ComfyUI panel?**
 → Yes: use the **GUI bridge** (patch/apply below). Edits appear live in the user's workflow.
 
-**Does this involve getting a result silently, testing code, or building/validating a custom node?**
+**Does the user want to run/queue the workflow that's already in the panel?**
+→ Yes: use the **GUI bridge** — write `{"command": "queue", "ts": <n>}` to `apply-patch-trigger.json`. Do NOT use hiddenswitch for this.
+
+**Does this involve getting a result silently, testing code, or building/validating a custom node — with no GUI involvement at all?**
 → Yes: use **hiddenswitch Python** — ComfyUI as a library, no GUI, no server needed. See `hiddenswitch/README.md`.
 
-If the user asked you to *modify their workflow*, use the GUI bridge.
-If the user asked you to *run something* or *build something*, use hiddenswitch.
 When in doubt, ask the user which they prefer before proceeding.
 
 ---
@@ -28,6 +29,8 @@ When in doubt, ask the user which they prefer before proceeding.
 | `workflow-state.readonly.json` | Full workflow graph. READ ONLY — never write to this file directly. Use the patch pattern below. |
 | `workflow-patch.json` | Write your partial changes here (nodes/links you want to add or modify). |
 | `apply-patch-trigger.json` | Write this signal to trigger the extension to apply your patch. |
+| `apply-response.json` | **Read this after every trigger write** to confirm success or get an error message. Written by the extension. |
+| `available-models.json` | Model names the server knows about: checkpoints, VAEs, LoRAs, ControlNets, etc. |
 | `nodes/` | Node catalog. Start with `nodes/index.md` when you need to select or look up a node. |
 | `workflow-history/` | Past patch snapshots. Enter only for revert operations — see `workflow-history/README.md`. |
 | `hiddenswitch/` | Instructions for running ComfyUI as a Python library (silent execution, node dev/testing). |
@@ -48,7 +51,11 @@ Write only the nodes or links you want to add or change to `workflow-patch.json`
 }
 ```
 
-Nodes are merged by `id` into the current graph. Only include what changes.
+Nodes are merged by `id` into the current graph. Only include what changes — unspecified fields are preserved. For example, to move node 4:
+
+```json
+{ "nodes": [{ "id": 4, "pos": [200, 400] }] }
+```
 
 Adding a new node? Use an `id` greater than `last_node_id` from `workflow-state.readonly.json`.
 Adding a new link? Use a `link_id` greater than `last_link_id`. Links are arrays: `[link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]`.
@@ -64,9 +71,9 @@ Write this signal to `apply-patch-trigger.json`:
 }
 ```
 
-Change `ts` on every write — this is what fires the file watcher. Use `Date.now() / 1000`.
+Change `ts` on every write — this is what fires the file watcher. Any monotonically increasing integer works.
 
-The extension merges your patch into the live graph in the ComfyUI panel.
+Then read `apply-response.json` to confirm success. If `status` is `"error"`, the message says why. See `troubleshooting.md` for the full error table.
 
 ---
 
@@ -85,11 +92,31 @@ Write this to `apply-patch-trigger.json`. Use `sourcePath` instead of `patchPath
 
 ---
 
+## Commands
+
+Write any of these to `apply-patch-trigger.json`. Always increment `ts`.
+
+| Command | Effect |
+|---|---|
+| `{"command": "queue", "ts": n}` | Run the workflow currently loaded in the panel |
+| `{"command": "interrupt", "ts": n}` | Stop an in-progress generation |
+| `{"command": "auto-layout", "ts": n}` | Auto-arrange all nodes (left-to-right, removes overlaps) |
+
+**Auto-layout warning**: groups are not repositioned. If the workflow has groups, nodes will move out of their group boundaries, leaving the layout broken. Either fix the group bounds afterward with a patch (compute new `bounding` from the updated node positions), or skip auto-layout and set `pos` manually on just the nodes you want to move.
+
+---
+
 ## Reading state efficiently
 
 1. Read `workflow-summary.md` first — it has node IDs for common tasks so you don't need to scan the full graph.
 2. If you need a specific node's full detail, read `workflow-state.readonly.json` and look up by `id`.
-3. Don't re-read state after writing a patch until the extension confirms it applied (summary regenerates automatically).
+3. After a successful patch, `workflow-state.readonly.json` updates automatically — you don't need to re-read unless you need to verify a specific value.
+
+---
+
+## Model names
+
+Before referencing a model in a workflow, check `available-models.json` for valid names. Use the exact string. Keys present: `checkpoints`, `vae`, `loras`, `controlnet`, `upscale_models`, `clip_vision`, `unclip_models`. A key is omitted if that loader type isn't available. If the name you need isn't listed, the server can't load it — check with the user.
 
 ---
 
@@ -99,16 +126,17 @@ Formal JSON schemas for the two files you write are in `schemas/`:
 
 | Schema | Validates |
 |---|---|
-| `schemas/workflow-patch.schema.json` | `workflow-patch.json` — node/link structure, required `id` field, link tuple format |
-| `schemas/apply-patch-trigger.schema.json` | `apply-patch-trigger.json` — required `ts`, mutual exclusion of `patchPath`/`sourcePath`/`command` |
-
-Read the relevant schema before writing if you're uncertain about field names or structure. The `description` fields inside each schema explain each property's purpose and constraints.
+| `schemas/workflow-patch.schema.json` | `workflow-patch.json` |
+| `schemas/apply-patch-trigger.schema.json` | `apply-patch-trigger.json` |
 
 ---
 
 ## Node catalog
 
-See `nodes/README.md` for how to use the catalog. Short version:
-1. Read `nodes/classes/index.md` to identify which operation class you need.
-2. Read only that class file (`nodes/classes/source.md`, `nodes/classes/sampler.md`, etc.) for candidates.
-3. Query `nodes/node-registry.json` by key for full schema — don't read the whole file.
+See `nodes/README.md`. Short version: read `nodes/classes/index.md` to find your operation class, then read only that class file. Query `nodes/node-registry.json` by key for full schema — don't read the whole file.
+
+---
+
+## Troubleshooting
+
+See `troubleshooting.md` — patch didn't apply, queue did nothing, model not found, empty workflow, server log location.

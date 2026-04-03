@@ -8,7 +8,16 @@
 
 ## Registering models for automatic download
 
-Models referenced by filename in a workflow are downloaded automatically from Hugging Face or CivitAI when registered with `add_known_models`. Call this before running the workflow.
+`add_known_models` registers a model so that the **embedded Python client** (`Comfy` / `queue_prompt`) will download it automatically on first use — during the workflow run, not at registration time.
+
+**Important**: `add_known_models` does NOT download the model immediately, and does NOT make the model visible to:
+- The running ComfyUI server (panel dropdown lists won't include it)
+- The CLI (`comfyui run-workflow`)
+- Any process other than the embedded client in the same Python session
+
+If you need the model available in the panel or via CLI, the model file must already be on disk (in `{installDir}/models/<folder>/`). Check what's available by reading the server log or querying `/object_info/CheckpointLoaderSimple`.
+
+To use `add_known_models`, call it before `client.queue_prompt()` in the same script:
 
 ```python
 from comfy.model_downloader import add_known_models

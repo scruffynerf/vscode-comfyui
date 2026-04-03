@@ -292,6 +292,49 @@ function atomicWrite(filePath: string, content: string) {
 // Public API
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Available models extractor
+// ---------------------------------------------------------------------------
+
+// Map from output key → { node type, input field name }
+// Each of these nodes exposes its model list as a COMBO input (array of strings).
+const MODEL_LOADERS: Record<string, { node: string; input: string }> = {
+    checkpoints:    { node: 'CheckpointLoaderSimple', input: 'ckpt_name' },
+    vae:            { node: 'VAELoader',               input: 'vae_name' },
+    loras:          { node: 'LoraLoader',              input: 'lora_name' },
+    controlnet:     { node: 'ControlNetLoader',        input: 'control_net_name' },
+    upscale_models: { node: 'UpscaleModelLoader',      input: 'model_name' },
+    clip_vision:    { node: 'CLIPVisionLoader',        input: 'clip_name' },
+    embeddings:     { node: 'CLIPTextEncode',          input: 'text' },  // not a list; skipped gracefully
+    unclip_models:  { node: 'unCLIPCheckpointLoader',  input: 'ckpt_name' },
+};
+
+function writeAvailableModels(objectInfo: Record<string, any>, rootPath: string) {
+    const models: Record<string, string[]> = {};
+
+    for (const [key, { node, input }] of Object.entries(MODEL_LOADERS)) {
+        const nodeInfo = objectInfo[node];
+        if (!nodeInfo) { continue; }
+        const allInputs = { ...(nodeInfo.input?.required ?? {}), ...(nodeInfo.input?.optional ?? {}) };
+        const inputDef = allInputs[input];
+        // COMBO inputs are [[option1, option2, ...], {...config}]
+        if (Array.isArray(inputDef) && Array.isArray(inputDef[0]) && inputDef[0].length > 0) {
+            models[key] = inputDef[0] as string[];
+        }
+    }
+
+    const output = {
+        generatedAt: new Date().toISOString(),
+        note: 'Model names the server knows about (same data as UI dropdowns). In hiddenswitch, includes models that will be downloaded on first use — not necessarily already on disk. Run ComfyUI: Refresh Node Catalog to update.',
+        models,
+    };
+    atomicWrite(path.join(rootPath, 'comfyai', 'available-models.json'), JSON.stringify(output, null, 2));
+}
+
+// ---------------------------------------------------------------------------
+// Catalog writer
+// ---------------------------------------------------------------------------
+
 /**
  * Classify objectInfo and write all catalog files (Tier 1–3 + manifest).
  * Shared by buildNodeCatalog and the rebuild path in updateNodeCatalog.
@@ -306,6 +349,9 @@ function writeCatalog(objectInfo: Record<string, any>, rootPath: string, serverU
 
     // Tier 3: raw dump — query by key, do not read whole file
     atomicWrite(path.join(nodesDir, 'node-registry.json'), JSON.stringify(objectInfo, null, 2));
+
+    // Available models — extracted from COMBO inputs of known loader nodes
+    writeAvailableModels(objectInfo, rootPath);
 
     const entries: NodeCatalogEntry[] = Object.entries(objectInfo)
         .map(([name, info]) => classifyNode(name, info));

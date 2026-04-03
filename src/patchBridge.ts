@@ -163,11 +163,12 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
 
             if (!isAiEnabled()) { return; }
             setStatus('$(sync~spin) ComfyUI: Patching...');
+            let triggerTs: number | undefined;
             try {
                 const signalContent = fs.readFileSync(signalPath, 'utf-8');
                 const signalData = JSON.parse(signalContent);
 
-                const triggerTs: number | undefined = typeof signalData?.ts === 'number' ? signalData.ts : undefined;
+                triggerTs = typeof signalData?.ts === 'number' ? signalData.ts : undefined;
 
                 if (signalData && signalData.command === 'testing-mode') {
                     // TESTING MODE — latch or clear the log directory for per-action log file reminders

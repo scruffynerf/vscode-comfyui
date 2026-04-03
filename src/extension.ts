@@ -191,14 +191,18 @@ export function activate(context: vscode.ExtensionContext) {
 				process.env.HOME
 			);
 
-			if (!args?.autoStart && fs.existsSync(installDir) && fs.readdirSync(installDir).length > 0) {
-				const selection = await vscode.window.showWarningMessage(
-					`The directory '${installDir}' is not empty. Do you want to continue with the installation?`,
-					'Continue',
-					'Cancel'
-				);
-				if (selection !== 'Continue') {
-					return;
+			if (!args?.autoStart && fs.existsSync(installDir)) {
+				const ownFiles = new Set(['comfyai', 'COMFYUI_AGENT_GUIDE.md']);
+				const foreignEntries = fs.readdirSync(installDir).filter(e => !ownFiles.has(e));
+				if (foreignEntries.length > 0) {
+					const selection = await vscode.window.showWarningMessage(
+						`The directory '${installDir}' is not empty. Do you want to continue with the installation?`,
+						'Continue',
+						'Cancel'
+					);
+					if (selection !== 'Continue') {
+						return;
+					}
 				}
 			}
 
@@ -253,14 +257,18 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 				process.env.HOME
 			);
 
-			if (!args?.autoStart && fs.existsSync(installDir) && fs.readdirSync(installDir).length > 0) {
-				const selection = await vscode.window.showWarningMessage(
-					`The directory '${installDir}' is not empty. Do you want to continue with the installation?`,
-					'Continue',
-					'Cancel'
-				);
-				if (selection !== 'Continue') {
-					return;
+			if (!args?.autoStart && fs.existsSync(installDir)) {
+				const ownFiles = new Set(['comfyai', 'COMFYUI_AGENT_GUIDE.md']);
+				const foreignEntries = fs.readdirSync(installDir).filter(e => !ownFiles.has(e));
+				if (foreignEntries.length > 0) {
+					const selection = await vscode.window.showWarningMessage(
+						`The directory '${installDir}' is not empty. Do you want to continue with the installation?`,
+						'Continue',
+						'Cancel'
+					);
+					if (selection !== 'Continue') {
+						return;
+					}
 				}
 			}
 

@@ -2,6 +2,8 @@
 
 ControlNet, IP-Adapter, InstantID, PuLID — spatial and style conditioning
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-easy-use` — [ComfyUI-Easy-Use](https://github.com/yolain/ComfyUI-Easy-Use) *(19 nodes)*: XYInputs: ControlNet, controlnetLoader, controlnetLoader++, controlnetLoaderADV, controlnetNames, controlnetStack, controlnetStackApply, instantIDApply, instantIDApplyADV, ipadapterApply, ipadapterApplyADV, ipadapterApplyEmbeds, ipadapterApplyEncoder, ipadapterApplyFaceIDKolors, ipadapterApplyFromParams, ipadapterApplyRegional, ipadapterStyleComposition, pulIDApply, pulIDApplyADV

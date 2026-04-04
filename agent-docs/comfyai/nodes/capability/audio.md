@@ -2,6 +2,8 @@
 
 Audio loading, separation, TTS, music generation
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui_fill-nodes` — [ComfyUI_Fill-Nodes](https://github.com/filliptm/ComfyUI_Fill-Nodes) *(16 nodes)*: AudioFrameCalculator, Audio_BPM_Analyzer, Audio_Beat_Visualizer, Audio_Crop, Audio_Drum_Detector, Audio_Envelope_Visualizer, Audio_Music_Video_Sequencer, Audio_Reactive_Brightness, Audio_Reactive_Edge_Glow, Audio_Reactive_Envelope, Audio_Reactive_Saturation, Audio_Reactive_Scale, Audio_Reactive_Speed, Audio_Segment_Extractor, Audio_Separation, Audio_Shot_Iterator

@@ -2,6 +2,8 @@
 
 Packs that matched no specific bucket
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-impact-subpack` — [ComfyUI Impact Subpack](https://github.com/ltdrdata/ComfyUI-Impact-Subpack): 

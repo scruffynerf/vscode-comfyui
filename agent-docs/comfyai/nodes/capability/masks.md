@@ -2,6 +2,8 @@
 
 Mask creation, manipulation, background removal, alpha operations
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-kjnodes` — [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) *(39 nodes)*: BatchCropFromMask, BatchCropFromMaskAdvanced, BlockifyMask, ColorToMask, ConditioningSetMaskAndCombine, ConditioningSetMaskAndCombine3, ConditioningSetMaskAndCombine4, ConditioningSetMaskAndCombine5, CreateAudioMask, CreateFadeMask, CreateFadeMaskAdvanced, CreateFluidMask, CreateGradientMask, CreateMagicMask, CreateShapeMask, CreateShapeMaskOnPath, CreateTextMask, CreateVoronoiMask, DrawMaskOnImage, FloatToMask, GetMaskSizeAndCount, GrowMaskWithBlur, ImageAndMaskPreview, ImageCropByMask, ImageCropByMaskAndResize, ImageCropByMaskBatch, ImageUncropByMask, LTXVAudioVideoMask, MaskBatchMulti, MaskOrImageToWeight, NormalizedAmplitudeToMask, OffsetMask, OffsetMaskByNormalizedAmplitude, PreviewImageOrMask, PreviewLatentNoiseMask, RemapMaskRange, ResizeMask, RoundMask, SaveImageWithAlpha

@@ -100,11 +100,13 @@
       "exact": true,
       "minLen": 7,
       "fields": [
-        {"label": "steps",     "idx": 2},
-        {"label": "cfg",       "idx": 3},
-        {"label": "sampler",   "idx": 4, "quote": true},
-        {"label": "scheduler", "idx": 5, "quote": true},
-        {"label": "denoise",   "idx": 6}
+        {"label": "seed",          "idx": 0},
+        {"label": "control_after", "idx": 1, "quote": true},
+        {"label": "steps",         "idx": 2},
+        {"label": "cfg",           "idx": 3},
+        {"label": "sampler",       "idx": 4, "quote": true},
+        {"label": "scheduler",     "idx": 5, "quote": true},
+        {"label": "denoise",       "idx": 6}
       ]
     },
     {
@@ -113,10 +115,12 @@
       "exact": true,
       "minLen": 7,
       "fields": [
-        {"label": "steps",     "idx": 3},
-        {"label": "cfg",       "idx": 4},
-        {"label": "sampler",   "idx": 5, "quote": true},
-        {"label": "scheduler", "idx": 6, "quote": true}
+        {"label": "seed",          "idx": 1},
+        {"label": "control_after", "idx": 2, "quote": true},
+        {"label": "steps",         "idx": 3},
+        {"label": "cfg",           "idx": 4},
+        {"label": "sampler",       "idx": 5, "quote": true},
+        {"label": "scheduler",     "idx": 6, "quote": true}
       ]
     },
     {

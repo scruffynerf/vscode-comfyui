@@ -44,6 +44,21 @@ app.registerExtension({
                 // loadGraphData(), which always creates a new tab via beforeLoadNewGraph().
                 const patch = event.data.patch;
 
+                // Remove nodes first — LiteGraph remove() disconnects all connected links automatically
+                if (patch && patch.remove_nodes && Array.isArray(patch.remove_nodes)) {
+                    for (const id of patch.remove_nodes) {
+                        const n = app.graph.getNodeById(id);
+                        if (n) { app.graph.remove(n); }
+                    }
+                }
+
+                // Remove specific links without removing their nodes
+                if (patch && patch.remove_links && Array.isArray(patch.remove_links)) {
+                    for (const id of patch.remove_links) {
+                        app.graph.removeLink(id);
+                    }
+                }
+
                 // Update or add nodes
                 if (patch && patch.nodes && Array.isArray(patch.nodes)) {
                     for (const pNode of patch.nodes) {

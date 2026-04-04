@@ -2,6 +2,8 @@
 
 LoRA loading, stacking, trigger words, textual inversion
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-kjnodes` — [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) *(10 nodes)*: DiTBlockLoraLoader, FluxBlockLoraSelect, HunyuanVideoBlockLoraSelect, ImagePrepForICLora, Intrinsic_lora_sampling, LTX2BlockLoraSelect, LTX2LoraLoaderAdvanced, LoraExtractKJ, LoraReduceRankKJ, Wan21BlockLoraSelect

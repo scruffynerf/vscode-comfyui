@@ -2,6 +2,8 @@
 
 File paths, directory ops, reading/writing non-image files
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `basic_data_handling` — [Basic data handling](https://github.com/StableLlama/ComfyUI-basic_data_handling) *(30 nodes)*: PathAbspath, PathBasename, PathCommonPrefix, PathDirname, PathExists, PathExpandVars, PathGetCwd, PathGetExtension, PathGetSize, PathGlob, PathInputDir, PathIsAbsolute, PathIsDir, PathIsFile, PathJoin, PathListDir, PathLoadImageRGB, PathLoadImageRGBA, PathLoadMaskFromAlpha, PathLoadMaskFromGreyscale, PathLoadStringFile, PathNormalize, PathOutputDir, PathRelative, PathSaveImageRGB, PathSaveImageRGBA, PathSaveStringFile, PathSetExtension, PathSplit, PathSplitExt

@@ -2,6 +2,8 @@
 
 Inpainting, outpainting, and smart fill
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-kjnodes` — [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) *(3 nodes)*: ImagePadForOutpaintMasked, ImagePadForOutpaintTargetSize, LatentInpaintTTM

@@ -2,6 +2,8 @@
 
 Face swap, face enhancement, live portrait, expression transfer
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-reactor` — [ComfyUI-ReActor](https://github.com/Gourieff/ComfyUI-ReActor) *(9 nodes)*: BuildFaceModel, FaceBoost, FaceSwap, FaceSwapOpt, LoadFaceModel, MakeFaceModelBatch, RestoreFace, RestoreFaceAdvanced, SaveFaceModel

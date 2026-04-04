@@ -3,6 +3,8 @@
 Find custom node packs by what they can do.
 Each link leads to a focused list with the specific nodes that matched.
 
+> **These packs may not be installed in your environment.** Always check `node-registry.json` first (Step 1 in [find-a-node.md](../find-a-node.md)) before using a node from this index.
+
 | Task area | File |
 |-----------|------|
 | String manipulation, prompt building, token counting, captioning | [text-prompts.md](text-prompts.md) |

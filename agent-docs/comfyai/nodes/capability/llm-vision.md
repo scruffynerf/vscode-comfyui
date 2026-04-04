@@ -2,6 +2,8 @@
 
 Large language models, vision-language models, image captioning via AI
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui_fill-nodes` — [ComfyUI_Fill-Nodes](https://github.com/filliptm/ComfyUI_Fill-Nodes) *(13 nodes)*: CaptionSaver_V2, CaptionToCSV, Fal_Gemini_ImageEdit, GeminiImageEditor, GeminiImageGenADV, GeminiTextAPI, GeminiVideoCaptioner, ImageCaptionLayout, ImageCaptionLayoutPDF, ImageCaptionSaver, OllamaCaptioner, QwenImageEditStrength, VideoCaptionSaver

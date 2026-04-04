@@ -2,6 +2,8 @@
 
 Super-resolution, tile upscaling, ESRGAN, SwinIR variants
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-impact-pack` — [ComfyUI Impact Pack](https://github.com/ltdrdata/ComfyUI-Impact-Pack) *(10 nodes)*: IterativeImageUpscale, IterativeLatentUpscale, PixelKSampleUpscalerProvider, PixelKSampleUpscalerProviderPipe, PixelTiledKSampleUpscalerProvider, PixelTiledKSampleUpscalerProviderPipe, SEGSUpscaler, SEGSUpscalerPipe, TwoSamplersForMaskUpscalerProvider, TwoSamplersForMaskUpscalerProviderPipe

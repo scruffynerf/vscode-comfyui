@@ -16,6 +16,26 @@ import { stateProvider, ComfyUIPanel } from './panel';
 export function mergeWorkflows(base: any, patch: any): any {
     const result = JSON.parse(JSON.stringify(base || { nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 }));
 
+    // Run removals first so a patch can atomically delete-and-replace in one step
+    const removeNodeIds = new Set<number>(
+        Array.isArray(patch.remove_nodes) ? patch.remove_nodes.map(Number) : []
+    );
+    const removeLinkIds = new Set<number>(
+        Array.isArray(patch.remove_links) ? patch.remove_links.map(Number) : []
+    );
+
+    if (removeNodeIds.size > 0 || removeLinkIds.size > 0) {
+        result.nodes = (result.nodes || []).filter((n: any) => !removeNodeIds.has(Number(n.id)));
+        result.links = (result.links || []).filter((l: any) => {
+            const id = Array.isArray(l) ? l[0] : l.id;
+            if (removeLinkIds.has(Number(id))) { return false; }
+            // Also remove links whose src or dst node is being deleted
+            const srcNodeId = Array.isArray(l) ? l[1] : l.origin_id;
+            const dstNodeId = Array.isArray(l) ? l[3] : l.target_id;
+            return !removeNodeIds.has(Number(srcNodeId)) && !removeNodeIds.has(Number(dstNodeId));
+        });
+    }
+
     if (patch.nodes && Array.isArray(patch.nodes)) {
         const baseNodes = result.nodes || [];
         for (const pNode of patch.nodes) {
@@ -107,7 +127,13 @@ function writeApplyResponse(installDir: string, status: 'ok' | 'error', message:
             payload.trigger_ts = triggerTs;
         }
         if (testingLogDir) {
-            const logFile = `${testingLogDir}/log-${triggerTs ?? payload.ts}.md`;
+            const logStem = `log-${triggerTs ?? payload.ts}`;
+            let logFileName = `${logStem}.md`;
+            let counter = 2;
+            while (fs.existsSync(path.join(installDir, testingLogDir, logFileName))) {
+                logFileName = `${logStem}-${counter++}.md`;
+            }
+            const logFile = `${testingLogDir}/${logFileName}`;
             payload.log_file = logFile;
             payload.testing_reminder = [
                 `STOP. Write ${logFile} now (use the Write tool — no read needed, just create it).`,
@@ -268,8 +294,28 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     if (patchData) {
                         // Patch mode: in-place updates via LiteGraph API — no loadGraphData,
                         // no new tab. New nodes use LiteGraph.createNode() + graph.add().
+
+                        // Detect attempted type changes on existing nodes — silently ignored by bridge.
+                        const baseState = stateProvider.getState();
+                        const baseNodesById: Record<number, any> = {};
+                        for (const n of (baseState?.nodes ?? [])) { baseNodesById[n.id] = n; }
+                        const typeWarnings: string[] = [];
+                        for (const pNode of (patchData.nodes ?? [])) {
+                            const existing = baseNodesById[pNode.id];
+                            if (existing && pNode.type && pNode.type !== existing.type) {
+                                typeWarnings.push(`node ${pNode.id}: type change "${existing.type}" → "${pNode.type}" is unsupported and was ignored — delete the old node and add a new one instead`);
+                            }
+                        }
+
                         ComfyUIPanel.currentPanel.applyPatch(patchData);
-                        writeApplyResponse(installDir, 'ok', `Patch applied: ${patchData.nodes?.length ?? 0} node(s), ${patchData.links?.length ?? 0} link(s)`, triggerTs);
+                        const addedNodes = patchData.nodes?.length ?? 0;
+                        const addedLinks = patchData.links?.length ?? 0;
+                        const rmNodes = patchData.remove_nodes?.length ?? 0;
+                        const rmLinks = patchData.remove_links?.length ?? 0;
+                        const summary = `Patch applied: ${addedNodes} node(s), ${addedLinks} link(s)` +
+                            (rmNodes > 0 || rmLinks > 0 ? `; removed: ${rmNodes} node(s), ${rmLinks} link(s)` : '');
+                        const msg = typeWarnings.length > 0 ? `${summary}. WARNING: ${typeWarnings.join('; ')}` : summary;
+                        writeApplyResponse(installDir, typeWarnings.length > 0 ? 'error' : 'ok', msg, triggerTs);
                     } else {
                         // Full workflow mode (sourcePath): intentional full replacement.
                         ComfyUIPanel.currentPanel.updateComfyState(workflowData);

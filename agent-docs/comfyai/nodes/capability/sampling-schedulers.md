@@ -2,6 +2,8 @@
 
 Custom samplers, scheduler curves, sigma manipulation
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-easy-use` — [ComfyUI-Easy-Use](https://github.com/yolain/ComfyUI-Easy-Use) *(13 nodes)*: XYInputs: Sampler/Scheduler, XYInputs: Steps, cascadeKSampler, fullCascadeKSampler, fullkSampler, kSampler, kSamplerCustom, kSamplerDownscaleUnet, kSamplerInpainting, kSamplerLayerDiffusion, kSamplerSDTurbo, kSamplerTiled, unSampler

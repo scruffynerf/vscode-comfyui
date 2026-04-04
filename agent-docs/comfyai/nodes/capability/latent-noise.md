@@ -2,6 +2,8 @@
 
 Latent tensor ops, noise injection, guidance, CFG manipulation
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-impact-pack` — [ComfyUI Impact Pack](https://github.com/ltdrdata/ComfyUI-Impact-Pack) *(16 nodes)*: CfgScheduleHookProvider, DenoiseScheduleHookProvider, DenoiseSchedulerDetailerHookProvider, LatentInfo, IterativeLatentUpscale, LatentPixelScale, LatentReceiver, LatentSender, LatentSwitch, NoiseInjectionDetailerHookProvider, NoiseInjectionHookProvider, PreviewBridgeLatent, ReencodeLatent, ReencodeLatentPipe, RemoveNoiseMask, VariationNoiseDetailerHookProvider

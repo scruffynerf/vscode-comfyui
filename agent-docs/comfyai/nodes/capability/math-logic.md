@@ -2,6 +2,8 @@
 
 Arithmetic, boolean logic, type conversion (int/float/bool)
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `basic_data_handling` — [Basic data handling](https://github.com/StableLlama/ComfyUI-basic_data_handling) *(49 nodes)*: Boolean And, Boolean Nand, Boolean Nor, Boolean Not, Boolean Or, Boolean Xor, CastToBoolean, CastToFloat, DataListCreateFromBoolean, DataListCreateFromFloat, DictCreateFromBoolean, DictCreateFromFloat, FloatAdd, FloatAsIntegerRatio, FloatCreate, FloatDivide, FloatDivideSafe, FloatFromHex, FloatHex, FloatIsInteger, FloatMultiply, FloatPower, FloatRound, FloatSubtract, ListCreateFromBoolean, ListCreateFromFloat, MathAbs, MathAcos, MathAsin, MathAtan, MathAtan2, MathCeil, MathCos, MathDegrees, MathE, MathExp, MathFloor, MathFormula, MathLog, MathLog10, MathMax, MathMin, MathPi, MathRadians, MathSin, MathSqrt, MathTan, SetCreateFromBoolean, SetCreateFromFloat

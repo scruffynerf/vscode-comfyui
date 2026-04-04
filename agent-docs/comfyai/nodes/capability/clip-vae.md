@@ -2,6 +2,8 @@
 
 CLIP text encoders, VAE encode/decode, conditioning
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui-multigpu` — [ComfyUI-MultiGPU](https://github.com/pollockjj/ComfyUI-MultiGPU) *(12 nodes)*: CLIPLoaderDisTorch2MultiGPU, CLIPLoaderMultiGPU, CLIPVisionLoaderDisTorch2MultiGPU, CLIPVisionLoaderMultiGPU, DualCLIPLoaderDisTorch2MultiGPU, DualCLIPLoaderMultiGPU, QuadrupleCLIPLoaderDisTorch2MultiGPU, QuadrupleCLIPLoaderMultiGPU, TripleCLIPLoaderDisTorch2MultiGPU, TripleCLIPLoaderMultiGPU, VAELoaderDisTorch2MultiGPU, VAELoaderMultiGPU

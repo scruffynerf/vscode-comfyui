@@ -2,6 +2,8 @@
 
 String manipulation, prompt building, token counting, captioning
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `basic_data_handling` — [Basic data handling](https://github.com/StableLlama/ComfyUI-basic_data_handling) *(58 nodes)*: CastToString, DataListCreateFromString, DictCreateFromString, ListCreateFromString, PathLoadStringFile, PathSaveStringFile, SetCreateFromString, StringCapitalize, StringCasefold, StringCenter, StringComparison, StringConcat, StringCount, StringDataListJoin, StringDecode, StringEncode, StringEndswith, StringEscape, StringExpandtabs, StringFind, StringFormatMap, StringIn, StringIsAlnum, StringIsAlpha, StringIsAscii, StringIsDecimal, StringIsDigit, StringIsIdentifier, StringIsLower, StringIsNumeric, StringIsPrintable, StringIsSpace, StringIsTitle, StringIsUpper, StringLength, StringListJoin, StringLjust, StringLower, StringLstrip, StringRemoveprefix, StringRemovesuffix, StringReplace, StringRfind, StringRjust, StringRsplitDataList, StringRsplitList, StringRstrip, StringSplitDataList, StringSplitList, StringSplitlinesDataList, StringSplitlinesList, StringStartswith, StringStrip, StringSwapcase, StringTitle, StringUnescape, StringUpper, StringZfill

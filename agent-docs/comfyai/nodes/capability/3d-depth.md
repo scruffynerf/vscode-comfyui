@@ -2,6 +2,8 @@
 
 Depth estimation, normal maps, 3D mesh, NeRF
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `comfyui_controlnet_aux` — [comfyui_controlnet_aux](https://github.com/Fannovel16/comfyui_controlnet_aux) *(10 nodes)*: DepthAnythingPreprocessor, DepthAnythingV2Preprocessor, LeReS-DepthMapPreprocessor, MediaPipe-FaceMeshPreprocessor, MeshGraphormer+ImpactDetector-DepthMapPreprocessor, MeshGraphormer-DepthMapPreprocessor, Metric3D-DepthMapPreprocessor, MiDaS-DepthMapPreprocessor, Zoe-DepthMapPreprocessor, Zoe_DepthAnythingPreprocessor

@@ -2,6 +2,8 @@
 
 Color correction, blending, compositing, filtering, pixel-level edits
 
+> **These packs may not be installed in your environment.** Cross-check `node-registry.json` before using any node — see Step 1 in [find-a-node.md](../find-a-node.md).
+
 Sorted by number of matching nodes (most relevant first).
 
 - `was-ns` — [WAS Node Suite (Revised)](https://github.com/ltdrdata/was-node-suite-comfyui) *(24 nodes)*: Blend Latents, Bounded Image Blend, Bounded Image Blend with Mask, Image Blend, Image Blend by Mask, Image Bloom Filter, Image Canny Filter, Image Color Palette, Image Dragan Photography Filter, Image Edge Detection Filter, Image Filter Adjustments, Image High Pass Filter, Image Lucy Sharpen, Image Median Filter, Image Mix RGB Channels, Image Monitor Effects Filter, Image Nova Filter, Image Remove Color, Image Rotate Hue, Image Select Color, Image Style Filter, Image Voronoi Noise Filter, Image fDOF Filter, Images to RGB

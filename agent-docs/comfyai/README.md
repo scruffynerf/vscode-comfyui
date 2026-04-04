@@ -61,12 +61,43 @@ Nodes are merged by `id` into the current graph. Only include what changes — u
 { "nodes": [{ "id": 4, "pos": [200, 400] }] }
 ```
 
-Adding a new node? Use an `id` greater than `last_node_id` from `workflow-state.readonly.json`.
+Adding a new node? Use an `id` greater than `last_node_id` from `workflow-state.readonly.json`. **Verify the node type exists in `node-registry.json` first** — if the type is not registered, `LiteGraph.createNode()` returns null and the node is silently dropped (apply-response will still report success). After adding nodes, run `{"command": "auto-layout", "ts": N}` to avoid overlapping — new nodes appear at the `pos` you specify which may land on top of existing nodes.
+
+**COMBO widget values are strings, not numbers.** A widget that offers choices (sampler names, channel names, etc.) expects the string value, e.g. `"red"`, not `0`. Check the `inputs` array in `node-registry.json` for the valid options for any COMBO widget before setting it.
+
 Adding a new link? Use a `link_id` greater than `last_link_id`. Links are arrays: `[link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]`.
 
 **Link IDs are reassigned.** The extension assigns its own IDs using the internal `last_link_id` counter — the IDs you specify in a patch are not preserved. After adding links, re-read `workflow-state.readonly.json` to get the actual assigned IDs if you need to reference them later.
 
-**Correcting a node's `type` drops its links.** If you patch a node to fix its type name, the extension may drop existing links to/from that node because it can't validate them against the new type. After any type correction, verify the node's links in `workflow-state.readonly.json` and add a second patch to reconnect any that were dropped.
+**You cannot change an existing node's `type` via patch.** The bridge applies type only when *creating* a new node — patching an existing node's `type` field is silently ignored (the node keeps its original type). The apply-response will warn you if it detects a type mismatch. To replace a node with a different type: use `remove_nodes` to delete the old node, add the new node with the correct type and a fresh `id`, and reconnect its links (see below).
+
+### Deleting nodes and links
+
+To remove nodes from the workflow, add `remove_nodes` to your patch with a list of node IDs:
+
+```json
+{ "remove_nodes": [10] }
+```
+
+LiteGraph automatically disconnects all links attached to a removed node — you do not need to list those links separately.
+
+To disconnect a specific link without removing either of its nodes, use `remove_links` with a list of link IDs (from `workflow-state.readonly.json`):
+
+```json
+{ "remove_links": [5] }
+```
+
+Removals are processed **before** adds/updates, so you can atomically replace a node in a single patch:
+
+```json
+{
+  "remove_nodes": [10],
+  "nodes": [{ "id": 10, "type": "NewNodeType", "pos": [200, 300] }],
+  "links": [[999, 3, 0, 10, 0, "IMAGE"]]
+}
+```
+
+This deletes node 10, creates a new node 10 of type `NewNodeType`, and connects it — all in one trigger write.
 
 ### Step 2 — Trigger the apply
 

@@ -85,11 +85,16 @@ import json, sys
 data = json.load(sys.stdin)
 term = 'upscale'   # change this
 for k, v in data.items():
-    desc = str(v.get('description', '') + str(v.get('display_name', ''))).lower()
-    if term in desc:
-        print(k, '-', v.get('display_name', ''))
+    display = v.get('display_name') or ''   # use 'or' — field may be null, not just missing
+    category = v.get('category') or ''
+    if term in (k + display + category).lower():
+        print(k, '-', display or k)
 "
 ```
+
+**Null fields**: several fields (`display_name`, `description`, `category`) can be explicitly `null` in the registry, not just absent. Use `v.get('field') or ''` rather than `v.get('field', '')` — the latter returns `None` when the field is present but null, which will cause `AttributeError` on `.lower()`.
+
+**`input.required` values are lists, not dicts**: each value in `input.required` is a list like `["MASK"]` or `["INT", {"default": 1}]` — the first element is the type string, the optional second is a constraints dict. To get input names, use `list(node['input']['required'].keys())` — do not call `.get()` on the values themselves.
 
 **What you get back:** the full node definition — all required/optional inputs with types and defaults, all outputs with types, and the `output_node` flag.
 

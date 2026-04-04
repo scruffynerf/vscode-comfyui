@@ -229,13 +229,41 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                 if (signalData && signalData.command === 'queue') {
                     // QUEUE MODE — forward to the ComfyUI panel (bridge node calls app.queuePrompt)
                     if (ComfyUIPanel.currentPanel) {
-                        ComfyUIPanel.currentPanel.queueWorkflow();
-                        writeApplyResponse(installDir, 'ok', 'Workflow queued — check user/comfyui.log for result (tail -20), or poll GET http://localhost:8188/history', triggerTs);
+                        const count = (typeof signalData.count === 'number' && signalData.count >= 1)
+                            ? Math.floor(signalData.count) : 1;
+                        for (let i = 0; i < count; i++) {
+                            ComfyUIPanel.currentPanel.queueWorkflow();
+                        }
+                        const countStr = count > 1 ? ` (${count} runs queued)` : '';
+                        writeApplyResponse(installDir, 'ok', `Workflow queued${countStr} — check user/comfyui.log for result (tail -20), or poll GET http://localhost:8188/history`, triggerTs);
                         setStatus('$(play) ComfyUI: Queued');
                         setTimeout(resetStatus, 2000);
                     } else {
                         writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again', triggerTs);
                     }
+                    return;
+                }
+
+                if (signalData && signalData.command === 'queue-status') {
+                    // QUEUE STATUS — query the ComfyUI server for current queue state
+                    const serverUrl = vscode.workspace.getConfiguration('comfyui').get<string>('serverUrl', 'http://localhost:8188');
+                    try {
+                        const resp = await fetch(`${serverUrl}/queue`);
+                        if (!resp.ok) {
+                            writeApplyResponse(installDir, 'error', `queue-status failed: HTTP ${resp.status}`, triggerTs);
+                        } else {
+                            const data: any = await resp.json();
+                            const running: any[] = data.queue_running ?? [];
+                            const pending: any[] = data.queue_pending ?? [];
+                            const runningId = running.length > 0 ? (running[0][1] ?? null) : null;
+                            const msg = `Queue: ${running.length} running, ${pending.length} pending` +
+                                (runningId ? ` (running prompt_id: ${runningId})` : '');
+                            writeApplyResponse(installDir, 'ok', msg, triggerTs);
+                        }
+                    } catch (err) {
+                        writeApplyResponse(installDir, 'error', `queue-status error: ${String(err)}`, triggerTs);
+                    }
+                    resetStatus();
                     return;
                 }
 

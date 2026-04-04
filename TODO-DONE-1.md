@@ -210,3 +210,37 @@ _(All Tier 2 items done, targeting 2.1.0 — see CHANGELOG for details.)_
 - **Workflow diffing**: Semantic diff between two workflow JSONs — show what nodes/links were added, removed, or changed, in human-readable form. Useful for reviewing agent changes and understanding iteration history.
 
 ---
+
+## From test session 2026-04-04 — agent feedback (test7, ~40 min evaluation) ✅ ALL ACTIONABLE ITEMS DONE
+
+Full notes in `referencecode/feedback/test7/`. Workflow: basic txt2img, KSampler → KSamplerAdvanced swap, checkpoint swap, silent hiddenswitch run, multiple queue runs, WAS Node Suite install.
+
+### Doc fixes
+
+- ✅ **DOC: Queue triggers are fire-and-forget** — Agents assumed they must wait between queue commands, wasting ~30s per run. Added explicit note to `patch-reference.md`: multiple queue triggers can be written in rapid succession; patches and queue triggers can be freely interleaved. ComfyUI's internal queue buffers everything. (test7/GAP-1)
+
+- ✅ **DOC: Combining multiple changes in one patch** — Agents made 4 separate patches when 3 could have been one. Added note to `patch-reference.md` that `nodes` is an array — unrelated node changes should be batched into one patch. Only split when later changes depend on earlier results. (test7/summary)
+
+- ✅ **DOC: Link ID reuse after remove_nodes** — Docs didn't say whether old link IDs can be reused when reconnecting after node removal. Added note to "Replacing a node's type" in `patch-reference.md`: reuse is safe because removals run before adds. (test7/GAP-3)
+
+- ✅ **DOC: COMBO values are always strings** — Agents guessed `true`/`false` or `1`/`0` for COMBO fields. Strengthened the note in `patch-reference.md` key rules: always strings, lookup path via `node-registry.json input.required.<field>[0]`. (test7/log-note-session-reflections)
+
+- ✅ **DOC: Directory path ambiguity in testing instructions** — `TESTING-AGENT-INSTRUCTIONS.md` said `comfyai/apply-patch-trigger.json` without clarifying base directory; agent wrote to workspace-root `comfyai/` first. Added clarification: all `comfyai/` paths are relative to the directory containing `COMFYUI_AGENT_GUIDE.md`. (test7/GAP-2)
+
+- ✅ **DOC: hiddenswitch CLI output directory** — CLI outputs to `<cwd>/output/`, not `comfyui-workspace/output/`. Added note to `hiddenswitch/run-workflow.md`: run from inside `comfyui-workspace/` or pass `--output-dir` explicitly. (test7/log-7)
+
+- ✅ **DOC: Model availability — local vs. on-demand download** — Agents had no way to tell if a model would trigger a download or load immediately. Added "Checking if a model is already on disk" section to `hiddenswitch/reference/models.md`: check `models/` subdirs, use `huggingface-cli scan-cache`, estimate download size from HF metadata API. (test7/log-7)
+
+- ✅ **DOC: node-registry.json null field handling** — Example keyword search script used `.get('display_name', '')` which returns `None` (not `''`) when the field is explicitly null, causing `AttributeError`. Fixed example in `nodes/README.md` to use `or ''`. Also added explicit note: `display_name`, `category`, `description` may be null; `input.required` values are lists, not dicts. (test7/log-8)
+
+### Bug fixes
+
+- ✅ **BUG: workflow-summary.md misses KSamplerAdvanced fields** — After KSampler → KSamplerAdvanced replacement, summary omitted `add_noise`, `start_at_step`, `end_at_step`, `return_with_leftover_noise`. Fixed in `tools/node-data.json` KSamplerAdvanced extractor rule — all 10 fields now included. Python and TypeScript consumers both load this file automatically. (test7/BUG-1)
+
+### New features
+
+- ✅ **FEAT: `count` field on queue command** — `{"command": "queue", "count": 3, "ts": n}` queues N runs in one trigger. Defaults to 1. Useful with seed set to "randomize" for variation runs. Implemented in `patchBridge.ts`; documented in `patch-reference.md`. (test7/GAP-1 / summary)
+
+- ✅ **FEAT: queue-status command** — `{"command": "queue-status", "ts": n}` queries `/queue` endpoint and returns running count, pending count, and currently-running `prompt_id` in `apply-response.json`. Implemented in `patchBridge.ts`. (test7/summary)
+
+---

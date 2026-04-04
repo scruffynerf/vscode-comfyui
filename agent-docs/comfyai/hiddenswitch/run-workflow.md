@@ -43,6 +43,13 @@ Outputs are printed as JSON to stdout. Check for a `SaveImage` node's output in 
 
 Accepts both UI-format JSON (Save) and API-format JSON (Save → API Format) — converts automatically.
 
+**Output directory**: the CLI writes output images to `<cwd>/output/` — wherever you run the command from, not necessarily `comfyui-workspace/output/`. To avoid confusion, either run the command from inside `{installDir}/` or pass `--output-dir` explicitly:
+
+```bash
+{installDir}/{venv}/bin/comfyui run-workflow my_workflow.json --novram \
+  --output-dir {installDir}/output
+```
+
 ---
 
 ## Path 2 — Embedded Python

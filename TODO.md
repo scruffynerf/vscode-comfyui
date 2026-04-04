@@ -4,6 +4,12 @@ Open items only. Done items archived in `TODO-DONE-1.md`.
 
 ---
 
+## Code fixes (medium effort)
+
+- ⬜ **FEAT: Queue prompt ID in response** — When a queue command fires, the response says "Workflow queued — check log." No prompt ID is returned. When multiple runs are queued, there's no way to correlate a trigger to a specific output file. Include the `prompt_id` from ComfyUI's queue response in `apply-response.json`. (test7/summary)
+
+---
+
 ## Needs testing
 
 - ⬜ **TEST: patch/trigger end-to-end** — Verify the file watcher in `patchBridge.ts` fires correctly in a fresh install scenario. BUG-1 (bridge JS rewrite) addressed the message-handling side, but was not confirmed whether the watcher itself was also failing. Test with a real agent session from scratch.
@@ -22,6 +28,8 @@ Open items only. Done items archived in `TODO-DONE-1.md`.
 
 ## Needs hiddenswitch dev input (blocked)
 
+- ⬜ **DEV: hiddenswitch model availability API** — **Discuss with dev**: can hiddenswitch expose a way to query whether a given model is already resolved locally vs. needs a download? And if a download is needed, can it return file size before starting? This would let agents warn the user or skip models that require long downloads. (test7/log-7)
+
 - ⬜ **MODEL: model type metadata** — `available-models.json` has no field distinguishing AIO checkpoints from diffusion-only / CLIP-only / VAE-only components. Agents recommend wrong models (e.g. Chroma1-Base, diffusion-only, suggested as a full checkpoint). Options: (a) curated annotation JSON the extension merges in, (b) expose from `/object_info` if the fork adds type info. **Discuss with dev.**
 
 - ⬜ **MODEL: model list completeness / companion files** — Some models (e.g. zimage) appear only as a VAE, not a checkpoint. Agents search, find nothing, go to HuggingFace. Need a way to annotate "this is a component, not an AIO model" or link companion files. **Discuss with dev.**
@@ -36,17 +44,7 @@ Open items only. Done items archived in `TODO-DONE-1.md`.
 
 - ⬜ **GraphBuilder → GUI panel** — `GraphBuilder.finalize()` produces API-format JSON. Can it be loaded into the panel? Does the hiddenswitch fork include ComfyUI PR #1932 (API-format loading)? Does `sourcePath` in the extension bridge accept API format? See open Qs in `hiddenswitch/graphbuilder.md`. Until resolved, GraphBuilder output can only be *run* (hiddenswitch), not *shown* in the panel.
 
----
-
-## Curation (ongoing)
-
-These files are never "done" — add/refine entries as new nodes/packs are encountered.
-
-- ⬜ `tools/popular-nodes-descriptions.json` — agent-friendly description overrides for top-100 packs
-- ⬜ `tools/popular-nodes-veto.json` — mark duplicates and deprecated packs
-- ⬜ `tools/popular-nodes-includes.json` — must-include packs that fall below rank 100
-- ⬜ `tools/node-name-transforms.json` — prefix/suffix strips for noisy node class names
-- ⬜ `knowledge_base.md` — common workflow patterns and usage examples (stub, low priority)
+- ⬜ **PERF: hiddenswitch model resolution** — CLI made an HTTP HEAD request to HuggingFace even when the model was resolvable locally, adding ~3 minutes of network delay. Not something we can fix — inside hiddenswitch's model resolution logic. **Discuss with dev**: can it check for a local file/symlink before making any network calls? (test7/log-7)
 
 ---
 
@@ -59,6 +57,18 @@ These files are never "done" — add/refine entries as new nodes/packs are encou
 - ⬜ **Auto node type change** — When a patch specifies a different `type` on an existing node, automatically delete+recreate with link reconnection (checking slot compatibility). Currently unsupported and documented as such — agents use `remove_nodes` + new node explicitly instead. Only worth revisiting if agent sessions consistently struggle with the manual approach.
 
 - ⬜ **Workflow diffing** — Semantic diff between two workflow JSONs: what nodes/links were added, removed, or changed, in human-readable form. Useful for reviewing agent edits and understanding iteration history.
+
+---
+
+## Curation (ongoing)
+
+These files are never "done" — add/refine entries as new nodes/packs are encountered.
+
+- ⬜ `tools/popular-nodes-descriptions.json` — agent-friendly description overrides for top-100 packs
+- ⬜ `tools/popular-nodes-veto.json` — mark duplicates and deprecated packs
+- ⬜ `tools/popular-nodes-includes.json` — must-include packs that fall below rank 100
+- ⬜ `tools/node-name-transforms.json` — prefix/suffix strips for noisy node class names
+- ⬜ `knowledge_base.md` — common workflow patterns and usage examples (stub, low priority)
 
 ---
 

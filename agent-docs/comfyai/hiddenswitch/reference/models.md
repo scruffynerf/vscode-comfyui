@@ -6,6 +6,46 @@
 
 ---
 
+## Checking if a model is already on disk
+
+A model listed in `comfyai/available-models.json` may or may not be physically present on disk. The server's known-model list includes models it *can* download on demand — not only those already downloaded. If a model needs downloading, expect several minutes of wait time before generation begins.
+
+**Check local model files** — look in the model subdirectories under `{installDir}/models/`:
+
+```bash
+ls {installDir}/models/checkpoints/
+ls {installDir}/models/loras/
+ls {installDir}/models/vae/
+# etc.
+```
+
+These may be actual files or symlinks from the HF cache. Either way, if the file is present, the model loads immediately with no download.
+
+**Check the HuggingFace cache** — models downloaded via `add_known_models` land in `~/.cache/huggingface/hub/` and are symlinked into `{installDir}/models/`. You can inspect the cache with:
+
+```bash
+{installDir}/{venv}/bin/huggingface-cli scan-cache
+```
+
+If `huggingface-cli` is not installed in the venv, install it first:
+```bash
+{installDir}/{venv}/bin/pip install "huggingface_hub[cli]"
+```
+
+**Estimate download size before committing** — if you suspect a model needs downloading, you can fetch its metadata from HuggingFace before running:
+
+```python
+from huggingface_hub import get_paths_info
+info = list(get_paths_info("stabilityai/stable-diffusion-v1-5", ["v1-5-pruned-emaonly.safetensors"]))
+if info:
+    size_gb = info[0].size / 1e9
+    print(f"Download size: {size_gb:.1f} GB")
+```
+
+Or use the HF API directly: `GET https://huggingface.co/api/models/<repo_id>` and look at the `siblings` array for `rfilename` / `size` fields.
+
+---
+
 ## Registering models for automatic download
 
 `add_known_models` registers a model so that the **embedded Python client** (`Comfy` / `queue_prompt`) will download it automatically on first use — during the workflow run, not at registration time.

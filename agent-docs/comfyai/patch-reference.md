@@ -20,9 +20,11 @@ Write only the nodes or links you want to add or change to `workflow-patch.json`
 
 Nodes are merged by `id` into the current graph. Only include what changes — unspecified fields are preserved.
 
+**Batch unrelated changes into one patch.** `nodes` is an array — if you need to update steps, swap the checkpoint, and change both prompts, put all four node updates in a single patch and trigger once. Only split into separate patches when a later change depends on the result of an earlier one (e.g. an atomic node type replacement where you need to know the new ID).
+
 **Key rules:**
 - **`widgets_values` is a complete array** — include every element in order, not just the field you're changing. Read the current values from `workflow-state.readonly.json` first. See "Widget array layouts" below.
-- **COMBO widget values are strings** — check `node-registry.json` for valid options before setting sampler names, scheduler names, etc.
+- **COMBO widget values are always strings** — never `true`/`false` or `1`/`0`. For common nodes, the examples in "Widget array layouts" below show the correct values. For any other node, look up the field in `node-registry.json`: `input.required.<field_name>[0]` is the list of valid string options.
 - **New nodes** — use an `id` greater than `last_node_id`. Verify the type exists in `node-registry.json` first (unregistered types are silently dropped).
 - **New links** — use a `link_id` greater than `last_link_id`. Format: `[link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]`. Link slots and widget array positions are different numbering systems — see "Link slots vs widget positions" below.
 
@@ -73,11 +75,25 @@ Write any of these to `apply-patch-trigger.json`. Always increment `ts`.
 
 | Command | Effect |
 |---|---|
-| `{"command": "queue", "ts": n}` | Run the workflow currently loaded in the panel |
+| `{"command": "queue", "ts": n}` | Run the workflow currently loaded in the panel (once) |
+| `{"command": "queue", "count": 3, "ts": n}` | Queue N runs — useful when seed is set to "randomize" |
+| `{"command": "queue-status", "ts": n}` | Check current queue: how many running/pending, and the running prompt_id |
 | `{"command": "interrupt", "ts": n}` | Stop an in-progress generation |
 | `{"command": "auto-layout", "ts": n}` | Auto-arrange all nodes (left-to-right, removes overlaps) |
 | `{"command": "testing-mode", "logPath": "feedback/testN", "ts": n}` | Enable per-action log file reminders in every `apply-response.json` |
 | `{"command": "testing-mode", "enabled": false, "ts": n}` | Disable testing reminders |
+
+**Queue triggers are fire-and-forget.** ComfyUI has a built-in queue — multiple runs buffer automatically. You do NOT need to wait for a generation to finish before queuing another. You can also freely interleave patches and queue triggers:
+
+```
+write queue trigger (ts=10)   → queues run 1
+write seed patch + trigger (ts=11)   → updates seed
+write queue trigger (ts=12)   → queues run 2 with new seed
+write seed patch + trigger (ts=13)   → updates seed again
+write queue trigger (ts=14)   → queues run 3
+```
+
+All three runs will execute in order. No waiting required between any of these writes.
 
 **After queueing — always do this:**
 1. Wait for generation to complete.
@@ -166,5 +182,7 @@ To swap a node for one with a different type (e.g. KSampler → KSamplerAdvanced
 ```
 
 3. Removals run before adds — the old node is gone by the time the new one is created. The apply-response returns `status: ok` for this pattern.
+
+**Link IDs can be reused.** When a node is removed, its attached links are destroyed. You can safely reuse those link IDs when reconnecting the replacement node — the old links are gone before the new ones are created. Fresh IDs are also fine; either works.
 
 **Why you cannot just patch `type` in place:** `type` is only applied when *creating* a new node. Patching `type` on an existing node (without `remove_nodes`) is silently ignored and the apply-response will warn you.

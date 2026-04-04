@@ -15,6 +15,8 @@ At the start of your session:
    ```json
    {"command": "testing-mode", "logPath": "feedback/<session-name>", "ts": 1}
    ```
+   **Path base**: all `comfyai/` paths are relative to the directory containing `COMFYUI_AGENT_GUIDE.md` (typically `comfyui-workspace/`), not the VS Code workspace root. If you get no response, check you're writing to the right directory.
+
    Read `comfyai/apply-response.json` to confirm. From this point on, **every** response you get back from the extension will contain two fields:
    - `log_file` — the exact path to write your log entry for this action (e.g. `feedback/test4/log-1001.md`)
    - `testing_reminder` — a prompt telling you what to record

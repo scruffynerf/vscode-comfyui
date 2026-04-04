@@ -110,10 +110,10 @@
       ]
     },
     {
-      "_comment": "KSamplerAdvanced — exact; schema: add_noise@0, seed@1, control_after@2, steps@3, cfg@4, sampler@5, scheduler@6, start_at@7, end_at@8",
+      "_comment": "KSamplerAdvanced — exact; schema: add_noise@0, seed@1, control_after@2, steps@3, cfg@4, sampler@5, scheduler@6, start_at@7, end_at@8, return_leftover@9",
       "matches": ["ksampleradvanced"],
       "exact": true,
-      "minLen": 7,
+      "minLen": 10,
       "fields": [
         {"label": "seed",          "idx": 1},
         {"label": "control_after", "idx": 2, "quote": true},

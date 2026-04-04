@@ -123,6 +123,18 @@ export class ComfyUIPanel {
             (message) => {
                 if (message.command === 'comfyStateUpdate') {
                     stateProvider.update(message.workflowData);
+                    // If the catalog update failed at panel-open time (server wasn't ready),
+                    // the available-models.json file will be absent. Retry on the first state
+                    // update we receive — by this point the server is confirmed reachable.
+                    const workspaceFolders = vscode.workspace.workspaceFolders;
+                    if (workspaceFolders && isAiEnabled()) {
+                        const rootPath = workspaceFolders[0].uri.fsPath;
+                        const installDir = getInstallDir(rootPath);
+                        const modelsFile = path.join(installDir, 'comfyai', 'available-models.json');
+                        if (!fs.existsSync(modelsFile)) {
+                            ComfyUIPanel.triggerCatalogUpdate();
+                        }
+                    }
                 }
             },
             null,

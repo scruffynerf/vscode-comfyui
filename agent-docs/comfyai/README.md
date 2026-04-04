@@ -9,16 +9,16 @@ This directory is your interface to the user's ComfyUI workflow. Read this befor
 Before touching any file here, answer these questions in order:
 
 **Does the user want to see this change in their ComfyUI panel?**
-→ Yes: use the **GUI bridge** (patch/apply below). Edits appear live in the user's workflow.
+→ Yes: use the **GUI bridge** — write a patch and trigger it. See `patch-reference.md` for the full protocol.
 
 **Does the user want to run/queue the workflow that's already in the panel?**
-→ Yes: use the **GUI bridge** — write `{"command": "queue", "ts": <n>}` to `apply-patch-trigger.json`. Do NOT use hiddenswitch for this.
+→ Yes: write `{"command": "queue", "ts": <n>}` to `apply-patch-trigger.json`. Do NOT use hiddenswitch for this.
 
 **Does this involve getting a result silently, testing code, or building/validating a custom node — with no GUI involvement at all?**
 → Yes: use **hiddenswitch Python** — ComfyUI as a library, no GUI, no server needed. See `hiddenswitch/README.md`.
 
 **Is a ComfyUI server already running (panel is open, you can see the UI)?**
-→ Use the **GUI bridge** (triggers above) or the **server HTTP API** (`http://localhost:8188/...`). Do NOT start a hiddenswitch embedded Python client alongside a running server — they are separate processes and will conflict or duplicate work.
+→ Use the **GUI bridge** (triggers above) or the **server HTTP API** (`http://localhost:8188/...`). Do NOT start a hiddenswitch embedded Python client alongside a running server.
 
 When in doubt, ask the user which they prefer before proceeding.
 
@@ -28,158 +28,32 @@ When in doubt, ask the user which they prefer before proceeding.
 
 | File | Purpose |
 |---|---|
-| `workflow-summary.md` | **Read this first.** Generated overview: inputs, outputs, model loaders, main pipeline, node IDs for common tasks. |
-| `workflow-state.readonly.json` | Full workflow graph. READ ONLY — never write to this file directly. Use the patch pattern below. |
-| `workflow-patch.json` | Write your partial changes here (nodes/links you want to add or modify). |
-| `apply-patch-trigger.json` | Write this signal to trigger the extension to apply your patch. |
-| `apply-response.json` | **Read this after every trigger write** to confirm success or get an error message. Written by the extension. |
-| `available-models.json` | Model names the server knows about: checkpoints, VAEs, LoRAs, ControlNets, etc. |
-| `server-info.json` | Server configuration: launch args, device (MPS/CUDA/CPU), VRAM, Python/torch versions. Written on panel open. |
-| `nodes/` | Node catalog. Start with `nodes/README.md` when you need to select or look up a node. |
+| `workflow-summary.md` | **Read this first.** Current workflow: nodes, links, model, prompts, sampler settings, node IDs. |
+| `workflow-state.readonly.json` | Full workflow graph JSON. READ ONLY — use the patch pattern to make changes. |
+| `workflow-patch.json` | Write your partial changes here (nodes/links to add, update, or remove). |
+| `apply-patch-trigger.json` | Write a trigger here to apply your patch or run a command. |
+| `apply-response.json` | **Read after every trigger write.** Confirms success or gives an error. Written by the extension. |
+| `available-models.json` | Model names the server knows: checkpoints, VAEs, LoRAs, ControlNets, etc. |
+| `server-info.json` | Server config: device (MPS/CUDA/CPU), VRAM, Python/torch versions. Written on panel open. |
+| `patch-reference.md` | **Full patch protocol** — trigger format, commands, widget arrays, slot indices, node type replacement. |
+| `nodes/` | Node catalog. Start with `nodes/README.md` when you need to find or look up a node. |
 | `workflow-history/` | Past patch snapshots. Enter only for revert operations — see `workflow-history/README.md`. |
-| `hiddenswitch/` | Instructions for running ComfyUI as a Python library (silent execution, node dev/testing). |
-
----
-
-## How to make changes: the patch pattern
-
-**Always use this two-step approach. Never rewrite the full workflow.**
-
-### Step 1 — Write your patch
-
-Write only the nodes or links you want to add or change to `workflow-patch.json`.
-
-```json
-{
-  "nodes": [{ "id": 5, "widgets_values": ["new prompt text"] }]
-}
-```
-
-Nodes are merged by `id` into the current graph. Only include what changes — unspecified fields are preserved. For example, to move node 4:
-
-```json
-{ "nodes": [{ "id": 4, "pos": [200, 400] }] }
-```
-
-Adding a new node? Use an `id` greater than `last_node_id` from `workflow-state.readonly.json`. **Verify the node type exists in `node-registry.json` first** — if the type is not registered, `LiteGraph.createNode()` returns null and the node is silently dropped (apply-response will still report success). After adding nodes, run `{"command": "auto-layout", "ts": N}` to avoid overlapping — new nodes appear at the `pos` you specify which may land on top of existing nodes.
-
-**COMBO widget values are strings, not numbers.** A widget that offers choices (sampler names, channel names, etc.) expects the string value, e.g. `"red"`, not `0`. Check the `inputs` array in `node-registry.json` for the valid options for any COMBO widget before setting it.
-
-Adding a new link? Use a `link_id` greater than `last_link_id`. Links are arrays: `[link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]`.
-
-**Link IDs are reassigned.** The extension assigns its own IDs using the internal `last_link_id` counter — the IDs you specify in a patch are not preserved. After adding links, re-read `workflow-state.readonly.json` to get the actual assigned IDs if you need to reference them later.
-
-**You cannot change an existing node's `type` via patch.** The bridge applies type only when *creating* a new node — patching an existing node's `type` field is silently ignored (the node keeps its original type). The apply-response will warn you if it detects a type mismatch. To replace a node with a different type: use `remove_nodes` to delete the old node, add the new node with the correct type and a fresh `id`, and reconnect its links (see below).
-
-### Deleting nodes and links
-
-To remove nodes from the workflow, add `remove_nodes` to your patch with a list of node IDs:
-
-```json
-{ "remove_nodes": [10] }
-```
-
-LiteGraph automatically disconnects all links attached to a removed node — you do not need to list those links separately.
-
-To disconnect a specific link without removing either of its nodes, use `remove_links` with a list of link IDs (from `workflow-state.readonly.json`):
-
-```json
-{ "remove_links": [5] }
-```
-
-Removals are processed **before** adds/updates, so you can atomically replace a node in a single patch:
-
-```json
-{
-  "remove_nodes": [10],
-  "nodes": [{ "id": 10, "type": "NewNodeType", "pos": [200, 300] }],
-  "links": [[999, 3, 0, 10, 0, "IMAGE"]]
-}
-```
-
-This deletes node 10, creates a new node 10 of type `NewNodeType`, and connects it — all in one trigger write.
-
-### Step 2 — Trigger the apply
-
-Write this signal to `apply-patch-trigger.json`:
-
-```json
-{
-  "patchPath": "./comfyai/workflow-patch.json",
-  "ts": 1711812000
-}
-```
-
-Change `ts` on every write — this is what fires the file watcher. Any monotonically increasing integer works.
-
-Then read `apply-response.json` to confirm success. If `status` is `"error"`, the message says why. See `troubleshooting.md` for the full error table.
-
----
-
-## Loading a full workflow (replace, not patch)
-
-To replace the entire workflow with a saved JSON file:
-
-```json
-{
-  "sourcePath": "./path/to/workflow.json",
-  "ts": 1711812000
-}
-```
-
-Write this to `apply-patch-trigger.json`. Use `sourcePath` instead of `patchPath`.
-
----
-
-## Commands
-
-Write any of these to `apply-patch-trigger.json`. Always increment `ts`.
-
-| Command | Effect |
-|---|---|
-| `{"command": "queue", "ts": n}` | Run the workflow currently loaded in the panel |
-| `{"command": "interrupt", "ts": n}` | Stop an in-progress generation |
-| `{"command": "auto-layout", "ts": n}` | Auto-arrange all nodes (left-to-right, removes overlaps) |
-| `{"command": "testing-mode", "logPath": "feedback/testN", "ts": n}` | Enable testing reminders — every `apply-response.json` will include a `log_file` (e.g. `feedback/testN/log-1005.md`) and a `testing_reminder` telling you exactly what to write there |
-| `{"command": "testing-mode", "enabled": false, "ts": n}` | Disable testing reminders |
-
-**After queueing:** the extension confirms the trigger was received, but not whether the workflow actually succeeded. To check execution status, poll:
-```
-GET http://localhost:8188/history
-```
-Look for the most recent entry: `status.status_str` will be `"success"` or `"error"`, and `status.messages` will include `"execution_error"` or `"execution_interrupted"` if something went wrong. See `troubleshooting.md` for how to interpret the result.
-
-**Auto-layout warning**: groups are not repositioned. If the workflow has groups, nodes will move out of their group boundaries, leaving the layout broken. Either fix the group bounds afterward with a patch (compute new `bounding` from the updated node positions), or skip auto-layout and set `pos` manually on just the nodes you want to move.
+| `hiddenswitch/` | Running ComfyUI as a Python library (silent execution, node dev/testing). |
 
 ---
 
 ## Reading state efficiently
 
-1. Read `workflow-summary.md` first — it has node IDs for common tasks so you don't need to scan the full graph.
+1. Read `workflow-summary.md` first — it has node IDs for common tasks, so you rarely need the full graph.
 2. If you need a specific node's full detail, read `workflow-state.readonly.json` and look up by `id`.
-3. After a successful patch, both `workflow-state.readonly.json` and `workflow-summary.md` update automatically once the change is reflected in the panel.
-4. **Do not use a cached copy of `workflow-summary.md` from earlier in your context.** Re-read the file when you need current state — your cached version becomes stale as soon as the user or agent applies any patch.
+3. After a patch, both files update automatically once the change is reflected in the panel.
+4. **Do not use a cached `workflow-summary.md` from earlier in your context** — it goes stale as soon as any patch is applied.
 
 ---
 
 ## Model names
 
-Before referencing a model in a workflow, check `available-models.json` for valid names. Use the exact string. Keys present: `checkpoints`, `vae`, `loras`, `controlnet`, `upscale_models`, `clip_vision`, `unclip_models`. A key is omitted if that loader type isn't available.
-
-**Models in this list will be auto-downloaded on first use.** The hiddenswitch server manages its own known-model list and fetches models as needed when a workflow runs. A model appearing in `available-models.json` does not mean it's already on disk — it means the server knows how to get it.
-
-If the name you need isn't listed, the server can't load it. In that case, check with the user — they may need to download the model manually.
-
----
-
-## Schemas
-
-Formal JSON schemas for the two files you write are in `schemas/`:
-
-| Schema | Validates |
-|---|---|
-| `schemas/workflow-patch.schema.json` | `workflow-patch.json` |
-| `schemas/apply-patch-trigger.schema.json` | `apply-patch-trigger.json` |
+Check `available-models.json` for valid model names. If the file doesn't exist, query `GET http://localhost:8188/object_info/CheckpointLoaderSimple` (look at `inputs.required.ckpt_name[0]`) or ask the user.
 
 ---
 
@@ -189,6 +63,6 @@ See `nodes/README.md`. Short version: read `nodes/classes/index.md` to find your
 
 ---
 
-## Troubleshooting
+## Something went wrong?
 
-See `troubleshooting.md` — patch didn't apply, queue did nothing, model not found, empty workflow, server log location.
+**See `troubleshooting.md`** — covers: patch didn't appear, queue did nothing, generation failed silently, model not found, slow generation, server log location and what to look for.

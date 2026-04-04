@@ -52,6 +52,10 @@ These files are never "done" — add/refine entries as new nodes/packs are encou
 
 ## Future / design (no near-term plans)
 
+- ⬜ **BUG-4: Queue fires before panel sync** — After a patch, if the agent immediately queues, the ComfyUI server may execute the pre-patch workflow because the bridge JS hasn't updated the canvas yet. The apply-response confirms the trigger was received, not that the canvas is up to date. Workaround (documented): re-read `workflow-summary.md` to confirm the patch is reflected before queueing. Real fix would require the queue command to wait for a canvas-sync acknowledgement from the bridge, or the bridge to emit a "patch applied" signal back. (test5/BUG-4)
+
+- ⬜ **Widget array length validation in apply-response** — When a patch sets `widgets_values` on an existing node, compare the array length against what `node-registry.json` defines for that node type. If the count is wrong, include a warning in the apply-response (still apply, but warn). This would have caught the KSamplerAdvanced 9-vs-10 error immediately rather than at execution time. Requires loading the node registry at patch time, which is available at `comfyai/nodes/node-registry.json`. (test5/log-18)
+
 - ⬜ **Auto node type change** — When a patch specifies a different `type` on an existing node, automatically delete+recreate with link reconnection (checking slot compatibility). Currently unsupported and documented as such — agents use `remove_nodes` + new node explicitly instead. Only worth revisiting if agent sessions consistently struggle with the manual approach.
 
 - ⬜ **Workflow diffing** — Semantic diff between two workflow JSONs: what nodes/links were added, removed, or changed, in human-readable form. Useful for reviewing agent edits and understanding iteration history.

@@ -21,7 +21,7 @@ Everything you need is in `comfyai/` in the same directory as this file (the Com
 | Stop an in-progress generation | Write `{"command": "interrupt", "ts": <n>}` to `comfyai/apply-patch-trigger.json` |
 | Confirm a trigger was processed | Read `comfyai/apply-response.json` after every trigger write |
 | Know what nodes are available | `comfyai/nodes/` — start with `index.md` |
-| Know what models are available | `comfyai/available-models.json` |
+| Know what models are available | `comfyai/available-models.json` (may not exist — see `comfyai/README.md` for fallback) |
 | Revert a recent change | `comfyai/workflow-history/` — see `README.md` inside |
 | Run a workflow silently (no panel) | `comfyai/hiddenswitch/run-workflow.md` |
 

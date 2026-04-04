@@ -230,7 +230,7 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     // QUEUE MODE — forward to the ComfyUI panel (bridge node calls app.queuePrompt)
                     if (ComfyUIPanel.currentPanel) {
                         ComfyUIPanel.currentPanel.queueWorkflow();
-                        writeApplyResponse(installDir, 'ok', 'Workflow queued — poll GET http://localhost:8188/history to check execution result', triggerTs);
+                        writeApplyResponse(installDir, 'ok', 'Workflow queued — check user/comfyui.log for result (tail -20), or poll GET http://localhost:8188/history', triggerTs);
                         setStatus('$(play) ComfyUI: Queued');
                         setTimeout(resetStatus, 2000);
                     } else {
@@ -295,15 +295,21 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                         // Patch mode: in-place updates via LiteGraph API — no loadGraphData,
                         // no new tab. New nodes use LiteGraph.createNode() + graph.add().
 
-                        // Detect attempted type changes on existing nodes — silently ignored by bridge.
+                        // Detect attempted type changes on existing nodes that are NOT also being
+                        // removed in this same patch. If a node is in remove_nodes AND nodes[],
+                        // that's an atomic replacement — the bridge handles it correctly (removes first,
+                        // then creates new). Only warn for bare type-field patches on existing nodes.
                         const baseState = stateProvider.getState();
                         const baseNodesById: Record<number, any> = {};
                         for (const n of (baseState?.nodes ?? [])) { baseNodesById[n.id] = n; }
+                        const removedInThisPatch = new Set<number>(
+                            Array.isArray(patchData.remove_nodes) ? patchData.remove_nodes.map(Number) : []
+                        );
                         const typeWarnings: string[] = [];
                         for (const pNode of (patchData.nodes ?? [])) {
                             const existing = baseNodesById[pNode.id];
-                            if (existing && pNode.type && pNode.type !== existing.type) {
-                                typeWarnings.push(`node ${pNode.id}: type change "${existing.type}" → "${pNode.type}" is unsupported and was ignored — delete the old node and add a new one instead`);
+                            if (existing && pNode.type && pNode.type !== existing.type && !removedInThisPatch.has(Number(pNode.id))) {
+                                typeWarnings.push(`node ${pNode.id}: type change "${existing.type}" → "${pNode.type}" is unsupported and was ignored — use remove_nodes to delete the old node and add a new one instead`);
                             }
                         }
 

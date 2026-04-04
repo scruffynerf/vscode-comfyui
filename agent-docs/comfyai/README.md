@@ -39,6 +39,7 @@ When in doubt, ask the user which they prefer before proceeding.
 | `nodes/` | Node catalog. Start with `nodes/README.md` when you need to find or look up a node. |
 | `workflow-history/` | Past patch snapshots. Enter only for revert operations — see `workflow-history/README.md`. |
 | `hiddenswitch/` | Running ComfyUI as a Python library (silent execution, node dev/testing). |
+| `knowledge/` | Pattern knowledge: model settings, hardware guidance, workflow conventions. See `knowledge/index.md`. |
 
 ---
 

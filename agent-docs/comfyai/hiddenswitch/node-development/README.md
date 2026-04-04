@@ -26,14 +26,16 @@ Only proceed here if checks 1–3 fail (nothing installable does the job) and th
 
 ## If you're in the right place
 
-Writing a custom node has three phases:
+Writing a custom node has these phases, in order:
 
 | Phase | File |
 |-------|------|
-| Write the node code (structure, entry-points) | [authoring.md](authoring.md) |
+| Node structure, types, IS_CHANGED, model management | `knowledge/node-anatomy.md` |
+| Design principles and pre-release checklist | `knowledge/best-practices.md` |
+| Hiddenswitch packaging (entry-points, pyproject.toml) | [authoring.md](authoring.md) |
 | Write-test-iterate loop (validate before promoting) | [tdd-loop.md](tdd-loop.md) |
 | pytest patterns, fixtures, ProcessPoolExecutor | [testing.md](testing.md) |
 
-Start with [authoring.md](authoring.md). It will route you to [tdd-loop.md](tdd-loop.md) when the node structure is in place.
+Start with `knowledge/node-anatomy.md`. Return here for `authoring.md` once the node class is written.
 
 **Promotion rule**: Never copy code directly into the user's `custom_nodes/` directory. Validate with the TDD loop first, then install via `uv pip install`. See [tdd-loop.md](tdd-loop.md) for the full promotion pattern.

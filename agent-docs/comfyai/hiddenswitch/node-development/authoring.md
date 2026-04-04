@@ -1,10 +1,8 @@
-# Authoring a Custom Node
+# Packaging a Custom Node for Hiddenswitch
 
-<!-- TODO: This is a stub. Content to be expanded with full examples. -->
+This document covers the hiddenswitch-specific packaging: project layout, entry-point registration, and dev install. Read `knowledge/node-anatomy.md` first — it covers the node class structure, INPUT_TYPES, and all the ComfyUI-standard patterns.
 
-This document covers the structure and packaging of a custom node. Read `node-development/README.md` first if you haven't — it has verification steps before you should be here.
-
-When you have the node structure in place, continue to `node-development/tdd-loop.md` to validate it before promoting.
+When the node is packaged and installed, go to `node-development/tdd-loop.md`.
 
 ---
 
@@ -23,40 +21,6 @@ my-nodes/
     workflows/
       __init__.py        ← required (makes this a Python package for importlib.resources)
       test-basic.json    ← exported from ComfyUI UI, exercises your node
-```
-
----
-
-## Node structure
-
-```python
-# my_nodes/my_node.py
-from comfy.nodes.package_typing import CustomNode
-
-
-class MyNode(CustomNode):
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "image": ("IMAGE",),
-                "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0}),
-            }
-        }
-
-    RETURN_TYPES = ("IMAGE",)
-    FUNCTION = "process"
-    CATEGORY = "my_nodes"
-
-    def process(self, image, strength):
-        return (image * strength,)
-
-
-# my_nodes/__init__.py
-from .my_node import MyNode
-
-NODE_CLASS_MAPPINGS = {"MyNode": MyNode}
-NODE_DISPLAY_NAME_MAPPINGS = {"MyNode": "My Node"}
 ```
 
 ---
@@ -83,13 +47,12 @@ test = [
 my_nodes = "my_nodes"
 ```
 
-Install for development:
+Install for development (editable, with test deps):
+
 ```bash
 cd {installDir} && uv pip install -e /path/to/my-nodes/[test]
 ```
 
 ---
 
-When the node is written and the pyproject.toml is in place, go to `node-development/tdd-loop.md`.
-
-<!-- TODO: Expand with: more INPUT_TYPES examples (INT, STRING, COMBO/dropdown, optional inputs), RETURN_NAMES, IS_CHANGED for caching control, common patterns for image/latent/mask handling, configuration entry-points (comfyui.custom_config) -->
+When the entry-point is registered and the dev install is done, go to `node-development/tdd-loop.md`.

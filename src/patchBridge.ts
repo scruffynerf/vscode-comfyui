@@ -4,6 +4,8 @@ import * as path from 'path';
 import { getInstallDir, isAiEnabled } from './config';
 import { setStatus, resetStatus } from './statusBar';
 import { stateProvider, ComfyUIPanel } from './panel';
+import { waitForServer } from './install';
+import { updateNodeCatalog } from './nodeCatalog';
 
 // ---------------------------------------------------------------------------
 // Workflow merge
@@ -276,6 +278,89 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     } else {
                         writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again', triggerTs);
                     }
+                    return;
+                }
+
+                if (signalData && signalData.command === 'restart-server') {
+                    // RESTART SERVER — hit the reboot endpoint, wait for the server to come back,
+                    // then reload the panel and refresh the node catalog.
+                    const cfg = vscode.workspace.getConfiguration('comfyui');
+                    const serverUrl = cfg.get<string>('serverUrl', 'http://localhost:8188');
+                    const endpoint = cfg.get<string>('restartEndpoint', '/v2/manager/reboot');
+                    const timeout = cfg.get<number>('serverTimeout', 60000);
+                    setStatus('$(sync~spin) ComfyUI: Restarting server...');
+                    try {
+                        await fetch(`${serverUrl}${endpoint}`, { method: 'GET' });
+                    } catch (err: any) {
+                        // Connection drop on restart is expected — treat as success and fall through
+                        const isExpectedDrop = err instanceof TypeError &&
+                            (err.message.includes('fetch failed') || err.message.includes('ECONNRESET') ||
+                             err.message.includes('ECONNREFUSED') || err.message.includes('socket hang up'));
+                        if (!isExpectedDrop) {
+                            writeApplyResponse(installDir, 'error', `restart-server: fetch error: ${err.message}`, triggerTs);
+                            resetStatus();
+                            return;
+                        }
+                    }
+                    const becameResponsive = await waitForServer(serverUrl, 1000, timeout);
+                    if (!becameResponsive) {
+                        writeApplyResponse(installDir, 'error', 'restart-server: server did not become responsive before timeout', triggerTs);
+                        resetStatus();
+                        return;
+                    }
+                    // Reload panel and refresh catalog now that server is back
+                    if (ComfyUIPanel.currentPanel) {
+                        ComfyUIPanel.currentPanel.reload();
+                    }
+                    const workspaceFolders = vscode.workspace.workspaceFolders;
+                    if (workspaceFolders) {
+                        const rootPath = workspaceFolders[0].uri.fsPath;
+                        try {
+                            await updateNodeCatalog(serverUrl, getInstallDir(rootPath));
+                        } catch { /* catalog update is best-effort */ }
+                    }
+                    writeApplyResponse(installDir, 'ok', 'Server restarted and responsive — panel reloaded, catalog refreshed', triggerTs);
+                    setStatus('$(check) ComfyUI: Server restarted');
+                    setTimeout(resetStatus, 3000);
+                    return;
+                }
+
+                if (signalData && signalData.command === 'refresh-catalog') {
+                    // REFRESH CATALOG — re-fetch /object_info and rebuild all catalog files.
+                    // Same as running "ComfyUI: Refresh Node Catalog" from the command palette.
+                    // Use this after installing a custom node (without a full server restart) to
+                    // pick up new node types.
+                    const cfg = vscode.workspace.getConfiguration('comfyui');
+                    const serverUrl = cfg.get<string>('serverUrl', 'http://localhost:8188');
+                    const workspaceFolders = vscode.workspace.workspaceFolders;
+                    if (!workspaceFolders) {
+                        writeApplyResponse(installDir, 'error', 'refresh-catalog: no workspace folder', triggerTs);
+                        resetStatus();
+                        return;
+                    }
+                    setStatus('$(loading~spin) ComfyUI: Refreshing catalog...');
+                    try {
+                        const rootPath = workspaceFolders[0].uri.fsPath;
+                        const result = await updateNodeCatalog(serverUrl, getInstallDir(rootPath));
+                        const msg = result === null
+                            ? 'Catalog rebuilt from scratch'
+                            : result.added.length === 0 && result.removed.length === 0
+                                ? 'Catalog is already up to date'
+                                : `Catalog updated: +${result.added.length} added, -${result.removed.length} removed`;
+                        writeApplyResponse(installDir, 'ok', msg, triggerTs);
+                    } catch (err) {
+                        writeApplyResponse(installDir, 'error', `refresh-catalog failed — is the server running? (${String(err)})`, triggerTs);
+                    }
+                    resetStatus();
+                    return;
+                }
+
+                if (signalData && signalData.command === 'open-panel') {
+                    // OPEN PANEL — create or reload the ComfyUI panel.
+                    // Use after a server restart if the panel did not reload automatically.
+                    vscode.commands.executeCommand('comfyui.openReloadEditor');
+                    writeApplyResponse(installDir, 'ok', 'Panel opened/reloaded', triggerTs);
+                    resetStatus();
                     return;
                 }
 

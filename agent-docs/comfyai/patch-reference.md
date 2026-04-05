@@ -24,7 +24,7 @@ Nodes are merged by `id` into the current graph. Only include what changes — u
 
 **Key rules:**
 - **`widgets_values` is a complete array** — include every element in order, not just the field you're changing. Read the current values from `workflow-state.readonly.json` first. See "Widget array layouts" below.
-- **COMBO widget values are always strings** — never `true`/`false` or `1`/`0`. For common nodes, the examples in "Widget array layouts" below show the correct values. For any other node, look up the field in `node-registry.json`: `input.required.<field_name>[0]` is the list of valid string options.
+- **COMBO widget values are always strings** — never `true`/`false` or `1`/`0`. For common nodes, the examples in "Widget array layouts" below show the correct values. For any other node, check `comfyai/nodes/widget-enums.json` first (compact lookup: `enums["NodeType"]["input_name"]` → list of valid strings). If it's not there, it's a model file list — check `comfyai/available-models.json`. As a last resort, `input.required.<field_name>[0]` in `node-registry.json` is the authoritative source.
 - **New nodes** — use an `id` greater than `last_node_id`. Verify the type exists in `node-registry.json` first (unregistered types are silently dropped).
 - **New links** — use a `link_id` greater than `last_link_id`. Format: `[link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]`. Link slots and widget array positions are different numbering systems — see "Link slots vs widget positions" below.
 
@@ -80,8 +80,16 @@ Write any of these to `apply-patch-trigger.json`. Always increment `ts`.
 | `{"command": "queue-status", "ts": n}` | Check current queue: how many running/pending, and the running prompt_id |
 | `{"command": "interrupt", "ts": n}` | Stop an in-progress generation |
 | `{"command": "auto-layout", "ts": n}` | Auto-arrange all nodes (left-to-right, removes overlaps) |
+| `{"command": "restart-server", "ts": n}` | Restart the ComfyUI server — waits until responsive, then reloads panel and refreshes catalog |
+| `{"command": "refresh-catalog", "ts": n}` | Re-fetch `/object_info` and rebuild all catalog files — use after installing a custom node |
+| `{"command": "open-panel", "ts": n}` | Create or reload the ComfyUI panel in VS Code |
 | `{"command": "testing-mode", "logPath": "feedback/testN", "ts": n}` | Enable per-action log file reminders in every `apply-response.json` |
 | `{"command": "testing-mode", "enabled": false, "ts": n}` | Disable testing reminders |
+
+**`restart-server` vs `refresh-catalog`:**
+- Use `restart-server` when you've edited `hiddenswitch/config/model-includes.json` or `model-veto.json` (the Python init node runs at server startup), or after any change that requires reloading Python code.
+- Use `refresh-catalog` when you've installed a new custom node and want to pick up its new node types without a full restart. This is the programmatic equivalent of the "ComfyUI: Refresh Node Catalog" command palette entry. `restart-server` already includes a catalog refresh — don't send both.
+- `restart-server` is blocking: `apply-response.json` is written only after the server is back up. The wait can take 30–90 seconds.
 
 **Queue triggers are fire-and-forget.** ComfyUI has a built-in queue — multiple runs buffer automatically. You do NOT need to wait for a generation to finish before queuing another. You can also freely interleave patches and queue triggers:
 

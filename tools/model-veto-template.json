@@ -1,0 +1,10 @@
+{
+  "_note": "Template seeded to comfyai/hiddenswitch/config/model-veto.json on first activation. Edit the deployed copy — changes here only take effect for new installs.",
+  "_format": "Add exact filename strings as they appear in comfyai/available-models.json. The match is against str(model), which is save_with_filename if set, otherwise the bare filename (no repo path prefix).",
+  "_examples": [
+    "sd_xl_turbo_1.0.safetensors",
+    "dreamshaper_8.safetensors",
+    "juggernautXL_v9Rundiffusionphoto2.safetensors"
+  ],
+  "filenames": []
+}

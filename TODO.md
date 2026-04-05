@@ -46,6 +46,9 @@ Open items only. Done items archived in `TODO-DONE-1.md`.
 
 - ⬜ **PERF: hiddenswitch model resolution** — CLI made an HTTP HEAD request to HuggingFace even when the model was resolvable locally, adding ~3 minutes of network delay. Not something we can fix — inside hiddenswitch's model resolution logic. **Discuss with dev**: can it check for a local file/symlink before making any network calls? (test7/log-7)
 
+- ⬜ **UPSTREAM: CivitAI auth support** — `model_downloader.py` uses a bare `requests.Session()` with no auth headers for CivitAI downloads. CivitAI requires an API token for gated/NSFW/early-access models (and increasingly for all downloads). No `CIVITAI_API_TOKEN` env var is read anywhere. **Discuss with dev**: add support for reading `CIVITAI_API_TOKEN` from the environment and appending `?token=<token>` to CivitAI download URLs (the standard pattern used by ComfyUI Manager and other tools).
+Also, CivArchive support would be huge too.
+
 ---
 
 ## Future / design (no near-term plans)

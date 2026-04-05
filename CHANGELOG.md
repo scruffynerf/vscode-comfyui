@@ -2,6 +2,65 @@
 
 All notable changes to the "VS Code ComfyUI" extension will be documented in this file.
 
+## [Unreleased — toward 2.2.0]
+
+### Node catalog — expanded model and metadata coverage
+
+- Expanded **`available-models.json`** model loader map from 8 categories to 30+. Previously only tracked core ComfyUI loaders (checkpoints, VAE, LoRA, ControlNet, upscale, clip_vision). Now includes: `diffusion_models` (UNETLoader), `clip` (CLIPLoader), `style_models`, `gligen`, and all major custom node categories — IPAdapter, DepthAnything, SAM, YOLO/Ultralytics, WanVideoWrapper (MMAudio/Whisper/Wav2Vec2), SeedVR2, ViTPose/pose detection, ComfyUI-Frame-Interpolation (VFI), FlashVSR, kohya diff ControlNet, and LTX latent upscalers. Custom node entries are silently skipped if the node is not installed.
+- Added **`comfyai/nodes/display-name-index.json`**: bidirectional map between UI display labels and class type names — only entries where they differ. Agents use `displayToClass` when a UI label appears in conversation and they need the type name for a patch, and `classToDisplay` to show users the label they see. Written on every catalog refresh.
+- Added **`comfyai/nodes/output-slot-index.json`**: slot array for every node's outputs, in slot order. Each entry: `{name, type}`. Index = slot number for GraphBuilder `.out(N)` and patch link `src_slot` values. No more guessing from names alone.
+- Added **`comfyai/nodes/widget-enums.json`**: valid string values for every COMBO (enum) widget input, excluding model file lists (those are already in `available-models.json`). Covers sampler names, schedulers, upscale methods, and any other string-enum input. Preferred lookup before falling back to `node-registry.json`.
+
+### Agent trigger commands — new built-in operations
+
+- Added **`{"command": "restart-server", "ts": n}`** trigger: hits the configured `restartEndpoint`, waits (up to `serverTimeout` ms) for the server to become responsive, reloads the panel, and refreshes the node catalog. Blocking — `apply-response.json` is written only after the server is back. Works with remote servers via `comfyui.serverUrl` setting.
+- Added **`{"command": "refresh-catalog", "ts": n}`** trigger: re-fetches `/object_info` and rebuilds all catalog files without a server restart. The programmatic equivalent of the "ComfyUI: Refresh Node Catalog" command palette entry. Use after installing a custom node to pick up its new node types immediately. Reports added/removed node counts in the response.
+- Added **`{"command": "open-panel", "ts": n}`** trigger: creates or reloads the ComfyUI panel in VS Code. Useful after a server restart if the panel did not reload automatically.
+
+### Model curation — agent-editable config
+
+- Added **`comfyai/hiddenswitch/config/model-includes.json`**: agents and users add HuggingFace or CivitAI model entries here. The bridge Python init reads this file at server startup and registers models via `add_known_models`. The server auto-downloads on first workflow use. Supports both `"source": "hf"` (HuggingFile) and `"source": "civitai"` (CivitFile) entries with full field documentation in the file itself.
+- Added **`comfyai/hiddenswitch/config/model-veto.json`**: agents and users list model filenames here to remove them from the server's known-model list at startup. Useful to suppress default models that are unavailable, renamed, or unwanted.
+- Both files are **seeded once** from `tools/model-{includes,veto}-template.json` on first extension activation and never overwritten — user and agent edits survive extension updates.
+- The Python `__init__.py` bridge node was rewritten to implement the curation logic: reads both config files at startup, calls `add_known_models` for includes, filters `_known_models_db` for vetos. Gracefully skips entries with missing fields or unknown sources.
+
+### Agent documentation — knowledge base (committed: knowledge base first pass)
+
+Added a comprehensive `comfyai/knowledge/` reference library covering the concepts agents need to build and debug workflows correctly:
+
+- **Workflow fundamentals**: `node-anatomy.md` (inputs, outputs, widgets, link types), `core-pipeline-nodes.md` (the 8 nodes in every image workflow), `workflow-design.md` (building from outputs backward)
+- **Sampling**: `samplers.md` (KSampler vs KSamplerAdvanced, denoise, CFG mechanics, scheduler comparison)
+- **Prompting**: `prompting.md` (tag-based vs natural language, attention syntax, negative prompts, model-specific notes)
+- **Resolution and aspect ratio**: `resolution.md` (native resolutions by family, standard dimensions table, hires fix threshold)
+- **LoRAs**: `loras.md` (how LoRAs work, strength, model-only vs full), `loras-stacking.md` (stacking limits, interaction effects)
+- **Common workflow patterns**: `img2img.md` (VAEEncode → KSampler denoise), `inpainting.md` (mask pipeline, hard vs soft inpaint), `hires-fix.md` (latent upscale → re-sample pattern)
+- **ControlNet usage**: `controlnet.md` (apply nodes, preprocessors, strength/start/end timing, stacking)
+- **Hardware**: `apple-silicon.md` (MPS device, `--novram` flag, VAE precision issues)
+- **Node development**: `hiddenswitch/node-development/best-practices.md` (do-less-per-node, avoid side effects, lazy evaluation)
+- **Index and router**: `knowledge/README.md` + `knowledge/index.md` routing agents to the right file
+
+### Agent documentation — model knowledge restructuring
+
+Restructured `comfyai/knowledge/models/` to eliminate cross-family contamination — agents no longer load SD1.5 or SDXL-specific content when working with Flux (or vice versa):
+
+- **Split `sdxl.md`** into two separate files: `sd15.md` (SD 1.5 — 512×512 architecture, single CLIP, tag prompts) and `sdxl.md` (SDXL — dual CLIP, 1024×1024, refiner). Each file is now fully self-contained with its own VAE, sampler settings, IP-Adapter models, and ControlNet model sections.
+- **Added `pony.md`** (Pony Diffusion V6 XL — score tag system, e621/Danbooru training) and **`illustrious.md`** (Illustrious XL / NoobAI-XL — Danbooru tags) as separate stubs linked from `sdxl.md`. Both are SDXL-architecture but have distinct prompting conventions.
+- **`loading-patterns.md`**: removed the "Sampler settings by model family" table — each family file now owns its own sampler settings. The loader node table (category → loader node) remains as it is genuinely agnostic.
+- **`ipadapter.md`** and **`controlnets.md`**: thinned to concept + task-routing tables. All per-family model lists moved into the family files (`sd15.md`, `sdxl.md`, `flux.md`).
+- **`upscalers.md`**: latent upscalers section removed (family-specific); replaced with routing links to `ltx.md` and `hunyuan.md`. Pixel upscalers (RealESRGAN), SeedVR2, FlashVSR, and VFI content unchanged.
+- **`vae.md`**: per-family VAE section replaced with a routing table pointing to each family file. Symptoms, precision/hardware notes, and common-mistakes content unchanged. Each family file now has its own `## VAE` section.
+- **`flux.md`**: added `## VAE` section (ae.safetensors, AIO vs diffusion-only distinction), `## ControlNet models` section (FLUX ControlNet LoRAs — load with LoraLoader, not ControlNetLoader); expanded sampler table to include CFG column.
+- **`ltx.md`**: latent upscaler models now inline with loader note (was a bare pointer to `upscalers.md`).
+- **`hunyuan.md`**: added `## Latent upscaler` section inline.
+- **README.md**: routing table updated — separate rows for SD1.5, SDXL, Pony XL, Illustrious XL.
+
+### Agent documentation — catalog lookup improvements
+
+- Updated **`graphbuilder.md`**: added practical patterns for looking up output slot indices from `output-slot-index.json`, looking up valid COMBO values from `widget-enums.json`, and validating connection types before building. Simplified open questions about GUI loading into a focused stub.
+- Updated **`hiddenswitch/reference/models.md`**: added CivitAI `CivitFile` usage docs (constructor args, how to find model/version IDs from URLs, auth limitations, gated model workaround via manual download); added `model-veto.json` docs; restructured "adding models to the panel" section into Option A (model-includes.json) vs Option B (manual download) with clearer guidance.
+- Updated **`nodes/README.md`**: added Step 2.5 quick-lookup entry (display-name-index, output-slot-index, widget-enums — check these before opening `node-registry.json`); added connection compatibility cross-reference.
+- Updated **`patch-reference.md`**: added `restart-server`, `refresh-catalog`, and `open-panel` commands to the trigger table; added guidance on when to use restart-server vs refresh-catalog; noted that `restart-server` is blocking and includes a catalog refresh.
+
 ## [2.1.0] - 2026-04-04
 
 ### Agent protocol — core mechanism fixes

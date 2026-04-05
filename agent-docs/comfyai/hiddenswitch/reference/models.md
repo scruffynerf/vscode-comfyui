@@ -2,7 +2,7 @@
 
 **This is a reference document. Look up what you need — do not read the whole file.**
 
-<!-- TODO: Expand with: list of commonly registered models by category, notes on which models require HF auth, CivitAI auth setup, model directory structure under installDir, disable_known_models for offline environments. -->
+<!-- TODO: Expand with: list of commonly registered models by category, model directory structure under installDir, disable_known_models for offline environments. -->
 
 ---
 
@@ -57,7 +57,23 @@ Or use the HF API directly: `GET https://huggingface.co/api/models/<repo_id>` an
 
 **For panel use**: the hiddenswitch server has its own known-model list and will auto-download models on first use — when a workflow runs that references a model the server knows about. Check `comfyai/available-models.json` for the current list. If the model you need is already there, just reference it by name in your workflow and queue it — the server handles the download.
 
-If a model is not in `available-models.json`, it is not in the server's known list. To add it for panel use: download it manually to `{installDir}/models/<folder>/` using `hf_hub_download` with `local_dir` set to that path, then restart the server. **Do not** use `add_known_models` for this — it only affects the embedded client.
+If a model is not in `available-models.json`, it is not in the server's known list. There are two ways to add it:
+
+**Option A — Register via `hiddenswitch/config/model-includes.json`**: edit `comfyai/hiddenswitch/config/model-includes.json` and add the model to the relevant folder array. The Python init node reads this file at server startup and calls `add_known_models`. The server will auto-download the model on first use. Restart the server after editing.
+
+```json
+{
+  "diffusion_models": [
+    { "source": "hf", "repo_id": "black-forest-labs/FLUX.1-dev", "filename": "flux1-dev.safetensors" }
+  ]
+}
+```
+
+The file has `_format` and `_examples` keys documenting the full syntax.
+
+**Option B — Download manually**: download the model directly to `{installDir}/models/<folder>/` using `hf_hub_download`, then restart the server. This is better for models that aren't in HuggingFace or CivitAI.
+
+**Do not** use `add_known_models` for panel use — it only affects the embedded Python client, not the running server.
 
 To use `add_known_models`, call it before `client.queue_prompt()` in the same script:
 
@@ -140,6 +156,53 @@ ComfyUI and `huggingface_hub` both pick up `HF_TOKEN` automatically.
 
 **Alternative** (if you want interactive login): `huggingface-cli login` — but this binary may not be installed in the venv by default. If it's missing, install it with `{venv}/bin/pip install "huggingface_hub[cli]"` or just use the env var instead.
 
+Common gated repos: `black-forest-labs/FLUX.1-dev`, `stabilityai/stable-diffusion-3-medium`, `stabilityai/stable-diffusion-3.5-large`, `stabilityai/stable-diffusion-3.5-medium`, `stabilityai/stable-diffusion-3.5-large-turbo`.
+
+---
+
+## CivitAI models
+
+`CivitFile` is supported in `add_known_models` alongside `HuggingFile`. The constructor takes:
+
+```python
+CivitFile(
+    model_id=133005,           # integer from the CivitAI URL: civitai.com/models/<model_id>
+    model_version_id=357609,   # integer: ?modelVersionId=<version_id> in the URL
+    filename="juggernautXL_v9.safetensors",  # exact filename as it appears on CivitAI
+    trigger_words=["juggernaut"],  # optional, informational only — not used by the downloader
+    alternate_filenames=("sdxl/juggernautXL_v9.safetensors",),  # optional
+)
+```
+
+**Finding IDs from a CivitAI URL**: a model page URL like `https://civitai.com/models/133005?modelVersionId=357609` gives you both integers directly.
+
+**Authentication**: the hiddenswitch downloader makes unauthenticated requests to the CivitAI API and download endpoint. There is no `CIVITAI_API_TOKEN` support built in. Most publicly-listed, non-gated CivitAI models download fine without auth. Models that are marked "early access", NSFW-restricted, or creator-gated will fail — the download URL will either redirect to a login page or return an error, and the model will not be saved. If you need a gated CivitAI model, download it manually:
+
+```bash
+# Find the direct download URL from the CivitAI model page (right-click → copy link on the Download button)
+curl -L "https://civitai.com/api/download/models/357609?token=YOUR_CIVITAI_TOKEN" \
+     -o "{installDir}/models/checkpoints/juggernautXL_v9.safetensors"
+```
+
+Then restart the server so the panel picks it up.
+
+---
+
+## Removing models from the server's known list
+
+To prevent the server from downloading or offering a specific model, add its filename to `comfyai/hiddenswitch/config/model-veto.json`:
+
+```json
+{
+  "filenames": [
+    "sd_xl_turbo_1.0.safetensors",
+    "dreamshaper_8.safetensors"
+  ]
+}
+```
+
+Filenames must match exactly as they appear in `comfyai/available-models.json`. Takes effect on next server restart.
+
 ---
 
 ## Disabling automatic downloads
@@ -150,3 +213,5 @@ config.disable_known_models = True
 ```
 
 Or via CLI: `comfyui run-workflow --disable-known-models`.
+
+This disables all automatic model downloads for the embedded client only. The server's known-model list is unaffected.

@@ -29,9 +29,27 @@ function copyDirRecursive(src: string, dest: string, vars: Record<string, string
 }
 
 /**
+ * Seeds a file from a template if it doesn't already exist at dest.
+ * Used for user/agent-editable config files that should survive extension updates.
+ */
+function seedFileOnce(srcPath: string, destPath: string, vars: Record<string, string>) {
+    if (fs.existsSync(destPath)) { return; }
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    let content = fs.readFileSync(srcPath, 'utf-8');
+    for (const [key, value] of Object.entries(vars)) {
+        content = content.replaceAll(`{${key}}`, value);
+    }
+    fs.writeFileSync(destPath, content, 'utf-8');
+}
+
+/**
  * Deploys agent docs, schemas, and the top-level guide into the install dir.
  * New agent docs are added by placing files in agent-docs/comfyai/ — no code
  * changes required (the recursive copy handles them automatically).
+ *
+ * User/agent-editable config files (hiddenswitch/config/) are seeded once from
+ * templates in tools/ and never overwritten — user edits are preserved across
+ * extension updates.
  */
 export function ensureAgentGuide(context: vscode.ExtensionContext) {
     if (!isAiEnabled()) { return; }
@@ -57,6 +75,19 @@ export function ensureAgentGuide(context: vscode.ExtensionContext) {
     try {
         // Deploy all agent docs: agent-docs/comfyai/ mirrors workspace comfyai/
         copyDirRecursive(path.join(extPath, 'agent-docs/comfyai'), comfyaiDir, vars);
+
+        // Seed user/agent-editable config files from tools/ templates (once — never overwrite)
+        const hiddenswitchConfigDir = path.join(comfyaiDir, 'hiddenswitch', 'config');
+        seedFileOnce(
+            path.join(extPath, 'tools/model-includes-template.json'),
+            path.join(hiddenswitchConfigDir, 'model-includes.json'),
+            vars
+        );
+        seedFileOnce(
+            path.join(extPath, 'tools/model-veto-template.json'),
+            path.join(hiddenswitchConfigDir, 'model-veto.json'),
+            vars
+        );
 
         // Deploy top-level guide into the install dir (with substitutions)
         let guideContent = fs.readFileSync(path.join(extPath, 'COMFYUI_AGENT_GUIDE.md'), 'utf-8');

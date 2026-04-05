@@ -298,15 +298,44 @@ function atomicWrite(filePath: string, content: string) {
 
 // Map from output key → { node type, input field name }
 // Each of these nodes exposes its model list as a COMBO input (array of strings).
+// Entries for custom-node-dependent categories are silently skipped if the node is not installed.
 const MODEL_LOADERS: Record<string, { node: string; input: string }> = {
-    checkpoints:    { node: 'CheckpointLoaderSimple', input: 'ckpt_name' },
-    vae:            { node: 'VAELoader',               input: 'vae_name' },
-    loras:          { node: 'LoraLoader',              input: 'lora_name' },
-    controlnet:     { node: 'ControlNetLoader',        input: 'control_net_name' },
-    upscale_models: { node: 'UpscaleModelLoader',      input: 'model_name' },
-    clip_vision:    { node: 'CLIPVisionLoader',        input: 'clip_name' },
-    embeddings:     { node: 'CLIPTextEncode',          input: 'text' },  // not a list; skipped gracefully
-    unclip_models:  { node: 'unCLIPCheckpointLoader',  input: 'ckpt_name' },
+    // Core ComfyUI — always present
+    checkpoints:            { node: 'CheckpointLoaderSimple',     input: 'ckpt_name' },
+    diffusion_models:       { node: 'UNETLoader',                 input: 'unet_name' },
+    vae:                    { node: 'VAELoader',                   input: 'vae_name' },
+    clip:                   { node: 'CLIPLoader',                  input: 'clip_name1' },
+    loras:                  { node: 'LoraLoader',                  input: 'lora_name' },
+    controlnet:             { node: 'ControlNetLoader',            input: 'control_net_name' },
+    upscale_models:         { node: 'UpscaleModelLoader',          input: 'model_name' },
+    clip_vision:            { node: 'CLIPVisionLoader',            input: 'clip_name' },
+    style_models:           { node: 'StyleModelLoader',            input: 'style_model_name' },
+    gligen:                 { node: 'GLIGENLoader',                input: 'gligen_name' },
+    // Custom node: ComfyUI-IPAdapter-plus
+    ipadapter:              { node: 'IPAdapterModelLoader',        input: 'ipadapter_file' },
+    // Custom node: ComfyUI-DepthAnythingV2
+    depthanything:          { node: 'DepthAnythingModelLoader',    input: 'model_name' },
+    // Custom node: Impact Pack / ComfyUI-SAM
+    sams:                   { node: 'SAMModelLoader',              input: 'model_name' },
+    // Custom node: Impact Pack / ComfyUI-YOLO
+    ultralytics_bbox:       { node: 'UltralyticsDetectorProvider', input: 'model_name' },
+    ultralytics_segm:       { node: 'UltralyticsDetectorProvider', input: 'model_name' },
+    // Custom node: WanVideoWrapper (Kijai)
+    mmaudio:                { node: 'WanVideoMMAudioModelLoader',  input: 'model' },
+    audio_encoders:         { node: 'WanVideoAudioEncoderLoader',  input: 'model' },
+    wav2vec2:               { node: 'WanVideoWav2Vec2Loader',      input: 'model' },
+    // Custom node: ComfyUI-SeedVR2_VideoUpscaler
+    SEEDVR2:                { node: 'SeedVR2ModelLoader',          input: 'model' },
+    // Custom node: ComfyUI-SCAIL-Pose
+    detection:              { node: 'PoseEstimationModelLoader',   input: 'model_name' },
+    // Custom node: ComfyUI-Frame-Interpolation
+    vfi_models:             { node: 'VFIModelLoader',              input: 'model_name' },
+    // Custom node: FlashVSR
+    FlashVSR:               { node: 'FlashVSRLoader',              input: 'model' },
+    // Custom node: diff_controlnet (kohya-ss ControlNet-diff)
+    diff_controlnet:        { node: 'DiffControlNetLoader',        input: 'model_name' },
+    // Custom node: LTX-specific latent upscalers
+    latent_upscale_models:  { node: 'LatentUpscaleModelLoader',    input: 'model_name' },
 };
 
 function writeAvailableModels(objectInfo: Record<string, any>, rootPath: string) {
@@ -331,6 +360,90 @@ function writeAvailableModels(objectInfo: Record<string, any>, rootPath: string)
     atomicWrite(path.join(rootPath, 'comfyai', 'available-models.json'), JSON.stringify(output, null, 2));
 }
 
+function writeDisplayNameIndex(objectInfo: Record<string, any>, rootPath: string) {
+    const displayToClass: Record<string, string> = {};
+    const classToDisplay: Record<string, string> = {};
+
+    for (const [className, info] of Object.entries(objectInfo)) {
+        const displayName: string = info.display_name || '';
+        if (displayName && displayName !== className) {
+            displayToClass[displayName] = className;
+            classToDisplay[className] = displayName;
+        }
+    }
+
+    const output = {
+        generatedAt: new Date().toISOString(),
+        note: 'Maps between UI display names and class type names (only entries where they differ). Use displayToClass when you see a UI label and need the type name for patch JSON. Use classToDisplay when you need the label a user sees.',
+        displayToClass,
+        classToDisplay,
+    };
+    atomicWrite(path.join(rootPath, 'comfyai', 'nodes', 'display-name-index.json'), JSON.stringify(output, null, 2));
+}
+
+const MODEL_FILE_EXTENSIONS = ['.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.gguf', '.sft'];
+
+function isModelFileList(values: string[]): boolean {
+    if (values.length === 0) { return false; }
+    return values.some(v => MODEL_FILE_EXTENSIONS.some(ext => v.toLowerCase().endsWith(ext)));
+}
+
+function writeOutputSlotIndex(objectInfo: Record<string, any>, rootPath: string) {
+    const index: Record<string, Array<{ name: string; type: string }>> = {};
+
+    for (const [className, info] of Object.entries(objectInfo)) {
+        const outputTypes: string[] = info.output ?? [];
+        if (outputTypes.length === 0) { continue; }
+        const outputNames: string[] = info.output_name ?? [];
+        index[className] = outputTypes.map((type, i) => ({
+            name: outputNames[i] || type,
+            type,
+        }));
+    }
+
+    const output = {
+        generatedAt: new Date().toISOString(),
+        note: 'Output slots for every node, in slot order. Array index = slot number for GraphBuilder .out(N) and patch link src_slot values. Each entry: {name, type}.',
+        index,
+    };
+    atomicWrite(path.join(rootPath, 'comfyai', 'nodes', 'output-slot-index.json'), JSON.stringify(output, null, 2));
+}
+
+function writeWidgetEnums(objectInfo: Record<string, any>, rootPath: string) {
+    const enums: Record<string, Record<string, string[]>> = {};
+
+    for (const [className, info] of Object.entries(objectInfo)) {
+        const allInputs: Record<string, any> = {
+            ...(info.input?.required ?? {}),
+            ...(info.input?.optional ?? {}),
+        };
+
+        const nodeEnums: Record<string, string[]> = {};
+
+        for (const [inputName, inputDef] of Object.entries(allInputs)) {
+            // COMBO inputs: [string[], {...config}] — first element is the enum value array
+            if (Array.isArray(inputDef) && Array.isArray(inputDef[0]) && inputDef[0].length > 0) {
+                const values = inputDef[0] as string[];
+                // Skip model file lists — those are already in available-models.json
+                if (!isModelFileList(values)) {
+                    nodeEnums[inputName] = values;
+                }
+            }
+        }
+
+        if (Object.keys(nodeEnums).length > 0) {
+            enums[className] = nodeEnums;
+        }
+    }
+
+    const output = {
+        generatedAt: new Date().toISOString(),
+        note: 'Valid string values for COMBO (enum) widget inputs, excluding model file lists (those are in available-models.json). Use to find valid values for sampler_name, scheduler, upscale_method, and any other string-enum input.',
+        enums,
+    };
+    atomicWrite(path.join(rootPath, 'comfyai', 'nodes', 'widget-enums.json'), JSON.stringify(output, null, 2));
+}
+
 // ---------------------------------------------------------------------------
 // Catalog writer
 // ---------------------------------------------------------------------------
@@ -352,6 +465,15 @@ function writeCatalog(objectInfo: Record<string, any>, rootPath: string, serverU
 
     // Available models — extracted from COMBO inputs of known loader nodes
     writeAvailableModels(objectInfo, rootPath);
+
+    // Display name index — bidirectional map for entries where display name differs from class name
+    writeDisplayNameIndex(objectInfo, rootPath);
+
+    // Output slot index — slot number + type for every node's outputs (for GraphBuilder and link patches)
+    writeOutputSlotIndex(objectInfo, rootPath);
+
+    // Widget enums — valid COMBO string values, excluding model file lists
+    writeWidgetEnums(objectInfo, rootPath);
 
     const entries: NodeCatalogEntry[] = Object.entries(objectInfo)
         .map(([name, info]) => classifyNode(name, info));

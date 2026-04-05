@@ -16,7 +16,81 @@ export function installIntegrationNode(installDir: string) {
 
     fs.mkdirSync(path.join(targetDir, 'js'), { recursive: true });
 
-    const initPy = `WEB_DIRECTORY = "./js"\nNODE_CLASS_MAPPINGS = {}\n__all__ = ["WEB_DIRECTORY", "NODE_CLASS_MAPPINGS"]`;
+    // Use forward slashes so the path is valid on all platforms inside the Python string
+    const comfyaiDir = path.join(installDir, 'comfyai').replace(/\\/g, '/');
+
+    const initPy = `import json
+import logging
+import os
+
+WEB_DIRECTORY = "./js"
+NODE_CLASS_MAPPINGS = {}
+__all__ = ["WEB_DIRECTORY", "NODE_CLASS_MAPPINGS"]
+
+_logger = logging.getLogger(__name__)
+_COMFYAI_DIR = ${JSON.stringify(comfyaiDir)}
+
+
+def _load_json(filename):
+    filepath = os.path.join(_COMFYAI_DIR, filename)
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+    except Exception as exc:
+        _logger.warning("[vscode-comfyui] Failed to load %s: %s", filename, exc)
+        return None
+
+
+def _apply_model_curation():
+    try:
+        from comfy.model_downloader import _known_models_db, add_known_models
+        from comfy.model_downloader_types import HuggingFile, CivitFile
+    except ImportError:
+        return
+
+    veto = _load_json("hiddenswitch/config/model-veto.json")
+    if veto:
+        veto_set = set(veto.get("filenames", []))
+        if veto_set:
+            for db in _known_models_db:
+                before = len(db.data)
+                db.data[:] = [m for m in db.data if str(m) not in veto_set]
+                removed = before - len(db.data)
+                if removed:
+                    _logger.info("[vscode-comfyui] Removed %d vetoed model(s) from %s", removed, getattr(db, "folder_names", "?"))
+
+    includes = _load_json("hiddenswitch/config/model-includes.json")
+    if includes:
+        for folder, entries in includes.items():
+            if not isinstance(entries, list):
+                continue
+            for entry in entries:
+                try:
+                    source = entry.get("source", "hf")
+                    if source == "hf":
+                        model = HuggingFile(
+                            entry["repo_id"],
+                            entry["filename"],
+                            save_with_filename=entry.get("save_with_filename"),
+                        )
+                    elif source == "civitai":
+                        model = CivitFile(
+                            model_id=entry["model_id"],
+                            model_version_id=entry["model_version_id"],
+                            filename=entry["filename"],
+                        )
+                    else:
+                        _logger.warning("[vscode-comfyui] Unknown source %r in model-includes.json", source)
+                        continue
+                    add_known_models(folder, model)
+                except (KeyError, TypeError) as exc:
+                    _logger.warning("[vscode-comfyui] Skipping bad entry in model-includes.json: %s", exc)
+
+
+_apply_model_curation()
+`;
     const bridgeJs = `import { app } from "../../scripts/app.js";
 
 app.registerExtension({

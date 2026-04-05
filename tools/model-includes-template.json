@@ -1,0 +1,33 @@
+{
+  "_note": "Template seeded to comfyai/hiddenswitch/config/model-includes.json on first activation. Edit the deployed copy — changes here only take effect for new installs.",
+  "_format": {
+    "keys": "ComfyUI folder names: checkpoints, diffusion_models, loras, vae, clip, controlnet, upscale_models, clip_vision, style_models",
+    "hf_entry": { "source": "hf", "repo_id": "<org/repo>", "filename": "<path/in/repo.safetensors>", "save_with_filename": "<optional: rename on disk>" },
+    "civitai_entry": { "source": "civitai", "model_id": 12345, "model_version_id": 67890, "filename": "<exact-filename.safetensors>" },
+    "civitai_ids": "Find model_id and model_version_id in the CivitAI URL: civitai.com/models/<model_id>?modelVersionId=<model_version_id>"
+  },
+  "_examples": {
+    "checkpoints": [
+      { "source": "hf", "repo_id": "Comfy-Org/flux1-dev", "filename": "flux1-dev-fp8.safetensors" },
+      { "source": "civitai", "model_id": 133005, "model_version_id": 357609, "filename": "juggernautXL_v9.safetensors" }
+    ],
+    "diffusion_models": [
+      { "source": "hf", "repo_id": "black-forest-labs/FLUX.1-dev", "filename": "flux1-dev.safetensors" }
+    ],
+    "clip": [
+      { "source": "hf", "repo_id": "comfyanonymous/flux_text_encoders", "filename": "t5xxl_fp8_e4m3fn.safetensors" }
+    ],
+    "loras": [
+      { "source": "hf", "repo_id": "some/repo", "filename": "subdir/weights.safetensors", "save_with_filename": "my-lora.safetensors" }
+    ]
+  },
+  "checkpoints": [],
+  "diffusion_models": [],
+  "loras": [],
+  "vae": [],
+  "clip": [],
+  "controlnet": [],
+  "upscale_models": [],
+  "clip_vision": [],
+  "style_models": []
+}

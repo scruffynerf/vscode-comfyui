@@ -33,30 +33,13 @@ To override: wire a `VAELoader` output to the `vae` input of `VAEDecode` / `VAEE
 
 ## VAE by model family
 
-### SD 1.5
+Each model file documents its required VAE. Go directly to the family file — do not rely on this file for VAE filenames.
 
-The bundled VAE from most SD1.5 checkpoints works fine. Common standalone option: `vae-ft-mse-840000-ema-pruned.safetensors` — a fine-tuned VAE that produces slightly sharper decodes. Rarely necessary.
-
-### SDXL
-
-SDXL checkpoints ship with a VAE, but it has a known fp16 precision issue on some hardware that causes gray/washed output. Fix:
-
-- Use the **SDXL VAE fp16 fix**: `sdxl_vae.safetensors` or `sdxl-vae-fp16-fix.safetensors` from Hugging Face (stabilityai/sdxl-vae)
-- This is the most common cause of gray images on SDXL — check this before anything else
-
-Some SDXL checkpoints ("baked VAE" variants) already include the fixed VAE and don't need a swap.
-
-### Flux
-
-Flux requires its own dedicated VAE — it is not compatible with SD1.5 or SDXL VAEs. The correct VAE is distributed alongside Flux weights:
-
-- `ae.safetensors` (from black-forest-labs/FLUX.1-dev or FLUX.1-schnell)
-
-For AIO Flux checkpoints (bundled), no action needed. For diffusion-only Flux base weights, you must load this VAE explicitly with `VAELoader`. Using the wrong VAE with Flux produces corrupted or black output.
-
-### SD 3 / Stable Cascade / other newer models
-
-These also ship model-specific VAEs. Always use the VAE distributed with the model — do not substitute SD1.5 or SDXL VAEs.
+- SD 1.5: [sd15.md](image_models/sd15.md#vae)
+- SDXL: [sdxl.md](image_models/sdxl.md#vae)
+- Flux: [flux.md](image_models/flux.md#vae)
+- SD3/SD3.5: see companion files table in [sd3.md](image_models/sd3.md)
+- Other models: VAE filename is in the companion files table in the model's file
 
 ---
 

@@ -10,6 +10,11 @@ Use this directory to find and understand available nodes. Read this before open
 
 **Step 2 — Read the one class file you need** (`classes/source.md`, `classes/sampler.md`, `classes/variable.md`, etc.). Each entry shows: node type, one-line purpose, key inputs → key outputs. Read the class relevant to your current decision — not all of them.
 
+**Step 2.5 — Quick lookups before touching node-registry.json:**
+- **UI label → class name** (or reverse): `comfyai/nodes/display-name-index.json` — only entries where they differ (e.g. `"K-Sampler" → "KSampler"`).
+- **Output slot indices** (for GraphBuilder `.out(N)` or patch link `src_slot`): `comfyai/nodes/output-slot-index.json` — slot array in order for every node.
+- **Valid COMBO widget values** (sampler names, schedulers, etc.): `comfyai/nodes/widget-enums.json` — all non-model enum inputs. Model file lists are in `comfyai/available-models.json`.
+
 **Step 3 — Query `node-registry.json` by key for full schema.** Do not read the whole file — it is typically ~1.8 MB / ~450k tokens and will exhaust your context. Access a specific node by its type name key only.
 
 ---
@@ -111,6 +116,12 @@ The catalog updates automatically when the panel opens and when the server resta
 { "completedAt": "2026-04-03T19:00:00.000Z", "nodeCount": 312 }
 ```
 Compare `completedAt` against when you triggered the refresh. If `completedAt` is newer, the catalog is current and `node-registry.json` is safe to query.
+
+---
+
+## If you need to verify connection compatibility
+
+See [connection-types.md](connection-types.md). Covers the exact-match rule, all 19 main pipeline types, primitive types, and how to check compatible pairs in `node-registry.json`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Reference for working with Flux models. Flux differs from SD1.5 and SDXL in architecture, loading, prompting, and sampling. Read this before building or modifying any Flux workflow.
 
-Cross-references: `knowledge/models/model-settings.md` (sampler settings), `knowledge/prompting.md` (prompt style), `knowledge/models/vae.md` (VAE requirements).
+Cross-references: `knowledge/prompting.md` (prompt style), `knowledge/models/vae.md` (VAE troubleshooting).
 
 ---
 
@@ -17,7 +17,9 @@ Flux comes in two forms:
 
 The official black-forest-labs releases (`flux1-dev.safetensors`, `flux1-schnell.safetensors`) are diffusion-only. Do not attempt to load them with `CheckpointLoaderSimple` alone — the workflow will error.
 
-FP8 quantized versions (`flux1-dev-fp8.safetensors`) are also diffusion-only and load the same way.
+FP8 quantized versions exist in **both** forms — check `available-models.json` to see which you have:
+- `flux1-dev-fp8.safetensors` under **`checkpoints`** (Comfy-Org repackaged AIO) → use `CheckpointLoaderSimple`
+- `flux1-dev-fp8.safetensors` under **`diffusion_models`** (Kijai split weights) → use `UNETLoader` + companions
 
 ---
 
@@ -47,6 +49,16 @@ KSampler or SamplerCustomAdvanced
 
 VAEDecode → SaveImage
 ```
+
+---
+
+## VAE
+
+Flux requires its own VAE — it is **not** compatible with SD1.5 or SDXL VAEs.
+
+- `ae.safetensors` (from `black-forest-labs/FLUX.1-dev` or `FLUX.1-schnell`)
+
+For AIO Flux checkpoints, the VAE is bundled — no action needed. For diffusion-only weights (`flux1-dev.safetensors`, `flux1-schnell.safetensors`), load explicitly with `VAELoader`. Wrong VAE produces corrupted or black output.
 
 ---
 
@@ -81,12 +93,10 @@ Do not set a high CFG value on the KSampler when using Flux — use CFG 1.0 on t
 
 ## Sampler settings
 
-| Variant | Steps | Sampler | Scheduler | Notes |
-|---|---|---|---|---|
-| Flux Schnell | 1–4 | `euler` | `simple` | Distilled. Steps > 4 waste compute. |
-| Flux Dev | 20–30 | `euler` | `simple` | More steps = higher fidelity |
-
-See `knowledge/models/model-settings.md` for full model settings table.
+| Variant | Steps | CFG | Sampler | Scheduler | Notes |
+|---|---|---|---|---|---|
+| Flux Schnell | 1–4 | 1.0 | `euler` | `simple` | Distilled. Steps > 4 waste compute. |
+| Flux Dev | 20–30 | 1.0 | `euler` | `simple` | Use `FluxGuidance` (2.5–4.5) for guidance control |
 
 ---
 
@@ -134,3 +144,18 @@ Many Flux LoRAs are model-only (UNet only) — CLIP strength has no effect. Star
 - Using tag-style prompts — Flux responds to natural language
 - Running Flux Schnell at 20 steps — 4 is correct, more wastes compute and can degrade quality
 - Stacking the wrong CLIP files — Flux needs T5-XXL + CLIP-L, not the dual-CLIP from SDXL
+
+---
+
+## ControlNet models
+
+FLUX ControlNets are implemented as LoRAs — load with `LoraLoader` or `LoraLoaderModelOnly`, **not** `ControlNetLoader`.
+
+In `available-models.json` → `loras`.
+
+| Model | Guidance type |
+|---|---|
+| `flux1-canny-dev-lora.safetensors` | Canny edge |
+| `flux1-depth-dev-lora.safetensors` | Depth map |
+
+<!-- TODO: Confirm the exact FLUX ControlNet wiring pattern — the conditioning pipeline differs from SD-style ControlNets. -->

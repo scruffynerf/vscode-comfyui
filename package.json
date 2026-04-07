@@ -56,7 +56,12 @@
       },
       {
         "command": "comfyui.installIntegrationNode",
-        "title": "Install/Update VSCode Integration Node",
+        "title": "Install/Update VSCode Integration Node (Hiddenswitch)",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.installIntegrationNodeTo",
+        "title": "Install Integration Node to External ComfyUI...",
         "category": "ComfyUI"
       },
       {

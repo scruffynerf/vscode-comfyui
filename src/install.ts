@@ -6,7 +6,18 @@ import * as path from 'path';
 // ---------------------------------------------------------------------------
 
 /**
- * Writes the VSCode bridge custom node into the ComfyUI install dir.
+ * Writes the VSCode bridge custom node into a ComfyUI custom_nodes directory.
+ * The targetCustomNodesDir should be the custom_nodes folder directly
+ * (e.g. /path/to/ComfyUI/custom_nodes). The node will be written as a
+ * vscode-comfyui-integration/ subfolder inside it.
+ */
+export function installIntegrationNodeTo(targetCustomNodesDir: string, comfyaiDir: string = '') {
+    const targetDir = path.join(targetCustomNodesDir, 'vscode-comfyui-integration');
+    _writeIntegrationNode(targetDir, comfyaiDir);
+}
+
+/**
+ * Writes the VSCode bridge custom node into the managed ComfyUI install dir.
  * Handles both pip-installed (flat) and git-cloned (ComfyUI/ subdir) layouts.
  */
 export function installIntegrationNode(installDir: string) {
@@ -14,10 +25,16 @@ export function installIntegrationNode(installDir: string) {
     const baseNodeDir = path.join(installDir, 'custom_nodes', 'vscode-comfyui-integration');
     const targetDir = fs.existsSync(path.join(installDir, 'ComfyUI')) ? nodeDir : baseNodeDir;
 
+    // Use forward slashes so the path is valid on all platforms inside the Python string
+    const comfyaiDir = path.join(installDir, 'comfyai').replace(/\\/g, '/');
+    _writeIntegrationNode(targetDir, comfyaiDir);
+}
+
+function _writeIntegrationNode(targetDir: string, comfyaiDir: string) {
     fs.mkdirSync(path.join(targetDir, 'js'), { recursive: true });
 
     // Use forward slashes so the path is valid on all platforms inside the Python string
-    const comfyaiDir = path.join(installDir, 'comfyai').replace(/\\/g, '/');
+    const safeComfyaiDir = comfyaiDir.replace(/\\/g, '/');
 
     const initPy = `import json
 import logging
@@ -28,10 +45,12 @@ NODE_CLASS_MAPPINGS = {}
 __all__ = ["WEB_DIRECTORY", "NODE_CLASS_MAPPINGS"]
 
 _logger = logging.getLogger(__name__)
-_COMFYAI_DIR = ${JSON.stringify(comfyaiDir)}
+_COMFYAI_DIR = ${JSON.stringify(safeComfyaiDir)}
 
 
 def _load_json(filename):
+    if not _COMFYAI_DIR:
+        return None
     filepath = os.path.join(_COMFYAI_DIR, filename)
     try:
         with open(filepath, encoding="utf-8") as f:

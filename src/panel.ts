@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getInstallDir, isAiEnabled } from './config';
@@ -217,6 +218,11 @@ export class ComfyUIPanel {
     private _getWebviewContent() {
         const config = vscode.workspace.getConfiguration('comfyui');
         const url = config.get<string>('serverUrl', 'http://localhost:8188');
+        const nonce = crypto.randomBytes(16).toString('hex');
+
+        // Derive the frame-src / connect-src origin from the configured URL.
+        let frameOrigin = url;
+        try { frameOrigin = new URL(url).origin; } catch { /* keep full url */ }
 
         return `
             <!DOCTYPE html>
@@ -224,46 +230,69 @@ export class ComfyUIPanel {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-src ${frameOrigin}; connect-src ${frameOrigin};">
                 <title>ComfyUI Editor</title>
                 <style>
-                    body, html {
-                        margin: 0;
-                        padding: 0;
-                        width: 100%;
-                        height: 100vh;
-                        overflow: hidden;
-                        background-color: #1e1e1e;
-                    }
-                    iframe {
-                        border: none;
-                        width: 100%;
-                        height: 100%;
-                    }
+                    body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; background-color: #1e1e1e; }
+                    iframe { border: none; width: 100%; height: 100%; }
+                    #error-msg { display: none; color: #ccc; font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 4rem auto; line-height: 1.6; }
+                    #error-msg h2 { color: #f48771; }
+                    code { background: #333; padding: 2px 5px; border-radius: 3px; }
                 </style>
-                <script>
+                <script nonce="${nonce}">
                     const vscode = acquireVsCodeApi();
+                    let bridgeConnected = false;
 
-                    // Listen for messages from the iframe (ComfyUI) and pass to VS Code
+                    // Relay iframe → VS Code
                     window.addEventListener('message', event => {
                         if (event.data && event.data.command === 'comfyStateUpdate') {
+                            bridgeConnected = true;
                             vscode.postMessage(event.data);
                         }
                     });
 
-                    // Listen for messages from VS Code and pass to the iframe (ComfyUI)
+                    // Relay VS Code → iframe
                     window.addEventListener('message', event => {
                         const cmd = event.data && event.data.command;
                         if (cmd === 'updateComfyState' || cmd === 'applyPatch' || cmd === 'queueWorkflow' || cmd === 'autoLayout') {
-                            const iframe = document.querySelector('iframe');
+                            const iframe = document.getElementById('comfy-frame');
                             if (iframe && iframe.contentWindow) {
                                 iframe.contentWindow.postMessage(event.data, '*');
                             }
                         }
                     });
+
+                    // After 4 seconds, if the bridge hasn't connected, check whether the
+                    // server is reachable with CORS. A 403 (stock ComfyUI blocking the
+                    // vscode-webview:// origin) causes the CORS fetch to fail even though
+                    // the iframe fired its load event. Show an actionable error in that case.
+                    setTimeout(() => {
+                        if (bridgeConnected) { return; }
+                        fetch('${url}', { credentials: 'omit' })
+                            .then(r => { if (!r.ok) { showError(); } })
+                            .catch(() => { showError(); });
+                    }, 4000);
+
+                    function showError() {
+                        if (bridgeConnected) { return; }
+                        const msg = document.getElementById('error-msg');
+                        const frame = document.getElementById('comfy-frame');
+                        if (msg) { msg.style.display = 'block'; }
+                        if (frame) { frame.style.display = 'none'; }
+                    }
                 </script>
             </head>
             <body>
+                <div id="error-msg">
+                    <h2>ComfyUI panel failed to load</h2>
+                    <p>The server at <strong>${url}</strong> is not accepting requests from the VS Code webview
+                    (likely a <strong>403 Forbidden</strong> — stock ComfyUI blocks the <code>vscode-webview://</code> origin by default).</p>
+                    <p><strong>Fix:</strong> add <code>--enable-cors-header</code> to your ComfyUI startup arguments.<br>
+                    In VS Code settings, set <em>ComfyUI › Startup Args</em> to include <code>--enable-cors-header</code>, then restart ComfyUI.</p>
+                    <p style="color:#888; font-size:0.9em;">The hiddenswitch fork permits this origin automatically and does not require this flag.</p>
+                </div>
                 <iframe
+                    id="comfy-frame"
                     src="${url}"
                     sandbox="allow-scripts allow-same-origin allow-forms"
                     allow="clipboard-read; clipboard-write">

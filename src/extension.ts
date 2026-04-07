@@ -8,7 +8,7 @@ import { getInstallDir } from './config';
 import { ComfyStateProvider, ComfyUIPanel, stateProvider } from './panel';
 import { watchApplyFile } from './patchBridge';
 import { ensureAgentGuide, ensureGitignore } from './agentFiles';
-import { installIntegrationNode, waitForServer } from './install';
+import { installIntegrationNode, installIntegrationNodeTo, waitForServer } from './install';
 import { updateNodeCatalog } from './nodeCatalog';
 
 export { ComfyStateProvider, stateProvider };
@@ -183,6 +183,28 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.installIntegrationNodeTo', async () => {
+			const picked = await vscode.window.showOpenDialog({
+				canSelectFiles: false,
+				canSelectFolders: true,
+				canSelectMany: false,
+				title: 'Select your ComfyUI custom_nodes folder',
+				openLabel: 'Install Here',
+			});
+			if (!picked || picked.length === 0) { return; }
+			const customNodesDir = picked[0].fsPath;
+			try {
+				installIntegrationNodeTo(customNodesDir);
+				vscode.window.showInformationMessage(
+					'Integration node installed. Restart ComfyUI with --enable-cors-header to allow the VS Code panel to connect.'
+				);
+			} catch (e: any) {
+				vscode.window.showErrorMessage(`Failed to install integration node: ${e?.message ?? e}`);
+			}
+		})
+	);
+
+	context.subscriptions.push(
 		vscode.commands.registerCommand('comfyui.installComfyUI', async (args?: { autoStart?: boolean }) => {
 			const config = vscode.workspace.getConfiguration('comfyui');
 			const installUv = config.get<boolean>('installUvAutomatically', true);
@@ -229,10 +251,7 @@ export function activate(context: vscode.ExtensionContext) {
 					? `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Host "Installing uv..."; irm https://astral.sh/uv/install.ps1 | iex; $env:Path += ";$HOME\\.cargo\\bin;$HOME\\.local\\bin" }`
 					: `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Error "uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; exit 1 }`;
 
-				terminal.sendText(`${checkUv}; \\
-uv venv ${venvDir} --python ${pythonVersion}; \\
-if ($?) { . ${venvDir}\\Scripts\\activate.ps1; \\
-uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd} }`);
+				terminal.sendText(`${checkUv}; uv venv ${venvDir} --python ${pythonVersion}; if ($?) { . ${venvDir}\\Scripts\\activate.ps1; uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd} }`);
 			} else {
 				const checkUv = installUv
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`
@@ -295,12 +314,7 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 					? `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Host "Installing uv..."; irm https://astral.sh/uv/install.ps1 | iex; $env:Path += ";$HOME\\.cargo\\bin;$HOME\\.local\\bin" }`
 					: `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Error "uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; exit 1 }`;
 
-				terminal.sendText(`git clone ${gitRepo} ComfyUI; \\
-if ($?) { cd ComfyUI; git checkout ${defaultBranch}; \\
-${checkUv}; \\
-uv venv ${venvDir} --python ${pythonVersion}; \\
-if ($?) { . ${venvDir}\\Scripts\\activate.ps1; \\
-uv pip install -e ".[dev]"${runCmd} } }`);
+				terminal.sendText(`git clone ${gitRepo} ComfyUI; if ($?) { cd ComfyUI; git checkout ${defaultBranch}; ${checkUv}; uv venv ${venvDir} --python ${pythonVersion}; if ($?) { . ${venvDir}\\Scripts\\activate.ps1; uv pip install -e ".[dev]"${runCmd} } }`);
 			} else {
 				const checkUv = installUv
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`

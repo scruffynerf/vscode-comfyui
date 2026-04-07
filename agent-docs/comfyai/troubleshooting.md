@@ -4,6 +4,20 @@ Reference for when things go wrong. Return here only when the normal flow fails.
 
 ---
 
+## ComfyUI panel shows a black screen
+
+If the embedded ComfyUI panel is completely black (no UI loads), the most common cause is that the ComfyUI server is rejecting requests from the VS Code webview's origin.
+
+**Fix**: add `--enable-cors-header` to your ComfyUI startup arguments.
+
+In VS Code settings, find **ComfyUI: Startup Args** and add `--enable-cors-header`. Then restart the server.
+
+This is required for any non-hiddenswitch ComfyUI install because the VS Code panel makes requests with a `vscode-webview://` origin that stock ComfyUI rejects by default. The hiddenswitch fork allows this origin automatically.
+
+Note: you may see a `403 Forbidden` error in the VS Code Developer Tools console (Help → Toggle Developer Tools) if this is the cause.
+
+---
+
 ## apply-response.json error messages
 
 After every trigger write, read `apply-response.json`. If `status` is `"error"`:

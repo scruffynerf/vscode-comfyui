@@ -27,6 +27,23 @@ Are you a developer or technical artist who works with both ComfyUI and code? Ti
 - A running ComfyUI instance (Local or Remote).
 - `uv` (optional, for self-contained installation). See [uv installation](https://docs.astral.sh/uv/getting-started/installation/) if you don't have uv installed.
 
+## Common Issues
+
+### Black screen when connecting to a local stock ComfyUI
+
+If you point the extension at your own ComfyUI install (not the hiddenswitch fork managed by this extension) and get a black screen, ComfyUI is blocking the connection.
+
+VS Code's webview panel uses a `vscode-webview://` origin. Stock ComfyUI rejects requests from unknown origins with a 403. The fix is to start ComfyUI with `--enable-cors-header`:
+
+```
+# In VS Code settings, add to ComfyUI: Startup Args:
+--enable-cors-header
+```
+
+Or pass it directly when launching ComfyUI. The hiddenswitch fork handles this automatically — no flag needed.
+
+You'll also need the bridge custom node for full two-way integration (workflow state sync, patch/queue commands). Use **ComfyUI: Install Integration Node to External ComfyUI...** from the Command Palette and select your ComfyUI's `custom_nodes/` folder.
+
 ## Commands
 
 All commands are available via the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) under the **ComfyUI** category.
@@ -38,7 +55,8 @@ All commands are available via the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+
 | **Run Hiddenswitch ComfyUI** | Start ComfyUI from the installed workspace. Prompts to install if not found | — |
 | **Install Hiddenswitch ComfyUI (Standard)** | Install via `uv pip install` — fast, self-contained, recommended | — |
 | **Install Development ComfyUI (Git Clone)** | Clone the repo and install as an editable package for node development | — |
-| **Install/Update VSCode Integration Node** | Copy the bridge custom node into the ComfyUI `custom_nodes` folder | — |
+| **Install/Update VSCode Integration Node (Hiddenswitch)** | Update the bridge custom node inside the extension-managed ComfyUI install | — |
+| **Install Integration Node to External ComfyUI...** | Install the bridge into any ComfyUI's `custom_nodes` folder via a folder picker | — |
 | **Refresh Node Catalog** | Query `/object_info` and rebuild `comfyai/nodes/` (index, per-class lists, raw registry). Also runs silently on panel open. Deployed alongside the appmana pip catalog (2500+ installable packages) and capability index (find packs by what they can do). | — |
 | **View Current ComfyUI State (JSON)** | Open the live `comfyai/workflow-state.readonly.json` as a read-only document in the editor | — |
 | **Apply Currently Open Workflow JSON** | Load the JSON file in the active editor tab directly into the ComfyUI panel. Requires the bridge custom node to be installed. | — |

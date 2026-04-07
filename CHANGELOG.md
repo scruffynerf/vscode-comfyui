@@ -4,6 +4,18 @@ All notable changes to the "VS Code ComfyUI" extension will be documented in thi
 
 ## [Unreleased — toward 2.2.0]
 
+### Bug fixes
+
+- **Black screen with local stock ComfyUI** — VS Code's webview sends a `vscode-webview://` origin header that stock ComfyUI rejects with 403. Fixed in two ways: (1) the panel now shows an actionable error message with the fix instead of a silent black screen; (2) added documentation and README note. The fix for users: add `--enable-cors-header` to ComfyUI startup args. The hiddenswitch fork permits this origin automatically.
+- **Webview Content Security Policy** — added a proper `<meta http-equiv="Content-Security-Policy">` with a per-render nonce to the panel HTML. Without it, VS Code 1.96+ may block the inline relay script and the iframe. The CSP now explicitly allows `frame-src` and `connect-src` for the configured `serverUrl` origin.
+- **Windows install line continuations** — the PowerShell install commands used `\` as a line-continuation character (bash syntax). PowerShell uses `` ` `` — the `\` was treated as a command and threw `CommandNotFoundException`. Fixed by removing the unnecessary continuations and joining with `;` on a single line. Affects both Standard and Development install commands.
+
+### New commands
+
+- **ComfyUI: Install Integration Node to External ComfyUI...** — opens a folder picker to select any ComfyUI's `custom_nodes/` directory and installs the VS Code bridge node there. Previously the only install path wrote to the extension-managed hiddenswitch workspace. This command is the intended path for stock ComfyUI users who run their own instance.
+
+
+
 ### Node catalog — expanded model and metadata coverage
 
 - Expanded **`available-models.json`** model loader map from 8 categories to 30+. Previously only tracked core ComfyUI loaders (checkpoints, VAE, LoRA, ControlNet, upscale, clip_vision). Now includes: `diffusion_models` (UNETLoader), `clip` (CLIPLoader), `style_models`, `gligen`, and all major custom node categories — IPAdapter, DepthAnything, SAM, YOLO/Ultralytics, WanVideoWrapper (MMAudio/Whisper/Wav2Vec2), SeedVR2, ViTPose/pose detection, ComfyUI-Frame-Interpolation (VFI), FlashVSR, kohya diff ControlNet, and LTX latent upscalers. Custom node entries are silently skipped if the node is not installed.

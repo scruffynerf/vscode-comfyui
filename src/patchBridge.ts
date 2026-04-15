@@ -6,6 +6,7 @@ import { setStatus, resetStatus } from './statusBar';
 import { stateProvider, ComfyUIPanel } from './panel';
 import { waitForServer } from './install';
 import { updateNodeCatalog } from './nodeCatalog';
+import { formatWorkflowSummary, Workflow } from './workflowAnalyzer';
 
 // ---------------------------------------------------------------------------
 // Workflow merge
@@ -369,6 +370,41 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     saveHistory(installDir, triggerTs, null, null, signalData.notes ?? 'open-panel');
                     vscode.commands.executeCommand('comfyui.openReloadEditor');
                     writeApplyResponse(installDir, 'ok', 'Panel opened/reloaded', triggerTs, signalData.notes);
+                    resetStatus();
+                    return;
+                }
+
+                if (signalData && signalData.command === 'analyze-workflow') {
+                    // ANALYZE-WORKFLOW — read a workflow file and write analysis to output file
+                    const workflowPath = signalData.workflowPath;
+                    const outputFile = signalData.outputFile;
+                    if (!workflowPath || !outputFile) {
+                        writeApplyResponse(installDir, 'error', 'analyze-workflow requires workflowPath and outputFile', triggerTs, signalData.notes);
+                        resetStatus();
+                        return;
+                    }
+                    const fullWorkflowPath = path.isAbsolute(workflowPath)
+                        ? workflowPath
+                        : path.join(installDir, workflowPath);
+                    const fullOutputPath = path.isAbsolute(outputFile)
+                        ? outputFile
+                        : path.join(installDir, outputFile);
+                    try {
+                        if (!fs.existsSync(fullWorkflowPath)) {
+                            writeApplyResponse(installDir, 'error', `workflow file not found: ${workflowPath}`, triggerTs, signalData.notes);
+                            resetStatus();
+                            return;
+                        }
+                        const workflowContent = fs.readFileSync(fullWorkflowPath, 'utf-8');
+                        const workflowData: Workflow = JSON.parse(workflowContent);
+                        const summary = formatWorkflowSummary(workflowData);
+                        fs.mkdirSync(path.dirname(fullOutputPath), { recursive: true });
+                        fs.writeFileSync(fullOutputPath, summary, 'utf-8');
+                        saveHistory(installDir, triggerTs, null, null, signalData.notes ?? `analyzed ${workflowPath} → ${outputFile}`);
+                        writeApplyResponse(installDir, 'ok', `Workflow analyzed: ${workflowPath} → ${outputFile}`, triggerTs, signalData.notes);
+                    } catch (err) {
+                        writeApplyResponse(installDir, 'error', `analyze-workflow failed: ${String(err)}`, triggerTs, signalData.notes);
+                    }
                     resetStatus();
                     return;
                 }

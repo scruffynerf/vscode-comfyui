@@ -23,8 +23,16 @@
     },
     "command": {
       "type": "string",
-      "enum": ["queue", "interrupt", "auto-layout", "testing-mode", "restart-server", "refresh-catalog", "open-panel", "queue-status"],
+      "enum": ["queue", "interrupt", "auto-layout", "testing-mode", "restart-server", "refresh-catalog", "open-panel", "queue-status", "analyze-workflow"],
       "description": "Command to execute. Mutually exclusive with patchPath and sourcePath."
+    },
+    "workflowPath": {
+      "type": "string",
+      "description": "Used with command 'analyze-workflow'. Path to a ComfyUI workflow JSON file to analyze. Relative paths resolve from the install directory."
+    },
+    "outputFile": {
+      "type": "string",
+      "description": "Used with command 'analyze-workflow'. Path to write the analysis markdown file. Relative paths resolve from the install directory."
     },
     "count": {
       "type": "number",

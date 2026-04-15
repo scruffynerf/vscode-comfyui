@@ -47,10 +47,37 @@ Write to `apply-trigger.json`. All commands support the optional `notes` field. 
 | `{"command": "open-panel", "ts": n}` | Open panel | |
 | `{"command": "testing-mode", "logPath": "...", "ts": n}` | Enable log reminders | |
 | `{"command": "testing-mode", "enabled": false, "ts": n}` | Disable log reminders | |
+| `{"command": "analyze-workflow", "workflowPath": "...", "outputFile": "...", "ts": n}` | Analyze a workflow file | `"analyzing template"` |
 
 **Queue triggers are fire-and-forget.** ComfyUI queues multiple runs.
 
 **After queueing:** Wait for completion, then `tail -20 user/comfyui.log`. Or poll `GET http://localhost:8188/history`.
+
+---
+
+## Analyzing a Workflow File
+
+Analyze a workflow JSON file without loading it into the panel. Generates the same analysis as the live `workflow-summary.md` but for any workflow file.
+
+**Use when:**
+- You have a saved workflow template and want to understand it
+- The user shares a workflow file for reference
+- You want to document a workflow for later use
+
+```json
+{
+  "command": "analyze-workflow",
+  "workflowPath": "./workflows/portrait-template.json",
+  "outputFile": "./wiki/scratch/portrait-template-analysis.md",
+  "ts": 1711812000,
+  "notes": "analyzing user's favorite portrait workflow"
+}
+```
+
+- `workflowPath` — path to the workflow JSON file (relative to install directory, or absolute)
+- `outputFile` — path where the analysis markdown will be written (relative to install directory, or absolute)
+
+The analysis includes: node count, links, main pipeline, sources, outputs, current node values, and hints for common tasks.
 
 ---
 

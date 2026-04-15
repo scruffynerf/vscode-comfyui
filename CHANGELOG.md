@@ -69,6 +69,7 @@ knowledge/
 - Added **`{"command": "open-panel", "ts": n}`** trigger: creates or reloads the ComfyUI panel in VS Code. Useful after a server restart if the panel did not reload automatically.
 - **Apply trigger renamed** — `apply-patch-trigger.json` → `apply-trigger.json` (and matching doc/schema rename) to reflect that the file handles commands far beyond patching.
 - **`notes` field for action logging** — optional `notes` field in `apply-trigger.json` (e.g., `"notes": "testing prompt variation A"`). Echoed back in `apply-response.json` and logged to `workflow-history/` for audit trail. All commands now write history entries with notes.
+- **`analyze-workflow` command** — new trigger command to analyze a workflow JSON file without loading it into the panel. Takes `workflowPath` and `outputFile` fields. Writes the same analysis format as `workflow-summary.md` to a specified output path. Useful for analyzing saved templates or user-shared workflows.
 
 ### Model curation — agent-editable config
 

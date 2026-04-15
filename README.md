@@ -100,6 +100,14 @@ Once installed, run **ComfyUI: Run Hiddenswitch ComfyUI**. The extension will au
 - **[TODO.md](TODO.md)**: Prioritized implementation backlog.
 - **[CHANGELOG.md](CHANGELOG.md)**: Detailed release notes.
 
+## Development
+
+**Activation events:** This extension uses `"*"` because it has a file watcher that responds to agent-written files outside the workspace. When packaging:
+
+```bash
+vsce package --allow-star-activation
+```
+
 ## Contributing
 
 Found a bug or want to contribute? Visit our [GitHub repository](https://github.com/scruffynerf/vscode-comfyui).

@@ -1,5 +1,5 @@
 {
-  "_note": "Template seeded to comfyai/hiddenswitch/config/model-veto.json on first activation. Edit the deployed copy — changes here only take effect for new installs.",
+  "_note": "User/agent-editable config. Seeded from tools/ on first activation. Edits here persist across extension updates — deployed to comfyai/_extension/hiddenswitch/config/ on each activation. Add filenames to REMOVE from the known-model list here.",
   "_format": "Add exact filename strings as they appear in comfyai/available-models.json. The match is against str(model), which is save_with_filename if set, otherwise the bare filename (no repo path prefix).",
   "_examples": [
     "sd_xl_turbo_1.0.safetensors",

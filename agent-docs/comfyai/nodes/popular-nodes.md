@@ -1,7 +1,7 @@
 # Popular Custom Nodes
 
 Top 100 active nodes from the [Comfy Registry](https://comfyregistry.org), sorted into categories.
-The `id` is the `uv pip install` name.  Install via appmana (see [install-custom-nodes.md](hiddenswitch/install-custom-nodes.md)):
+The `id` is the `uv pip install` name.  Install via appmana (see [install-custom-nodes.md](../knowledge/hiddenswitch/install-custom-nodes.md)):
 
 ```bash
 cd {installDir}
@@ -11,7 +11,7 @@ uv pip install --extra-index-url https://nodes.appmana.com/simple/ <id>
 Then restart the ComfyUI server.
 
 Entries marked **git-only** are not yet in the appmana catalog — install from git instead
-(see [install-custom-nodes.md](hiddenswitch/install-custom-nodes.md)).
+(see [install-custom-nodes.md](../knowledge/hiddenswitch/install-custom-nodes.md)).
 
 ## General utilities
 

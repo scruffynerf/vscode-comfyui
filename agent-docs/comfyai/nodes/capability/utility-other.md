@@ -17,7 +17,7 @@ Sorted by number of matching nodes (most relevant first).
 - `ComfyUI-3D-Pack` — [ComfyUI-3D-Pack](https://github.com/MrForExample/ComfyUI-3D-Pack): 
 - `janus-pro` — [ComfyUI-Janus-Pro](https://github.com/CY-CHENYUE/ComfyUI-Janus-Pro): 
 - `comfyui-styles_csv_loader` — [ComfyUI-Styles_CSV_Loader](https://github.com/theUpsider/ComfyUI-Styles_CSV_Loader): 
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [SeedVarianceEnhancer](https://github.com/ChangeTheConstants/SeedVarianceEnhancer): 
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [SeedVarianceEnhancer](https://github.com/ChangeTheConstants/SeedVarianceEnhancer): 
 
 ---
 

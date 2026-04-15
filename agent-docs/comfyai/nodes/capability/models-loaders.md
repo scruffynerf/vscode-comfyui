@@ -13,7 +13,7 @@ Sorted by number of matching nodes (most relevant first).
 - `comfyui-kjnodes` — [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) *(2 nodes)*: CheckpointLoaderKJ, CheckpointPerturbWeights
 - `comfyui-easy-use` — [ComfyUI-Easy-Use](https://github.com/yolain/ComfyUI-Easy-Use) *(2 nodes)*: XYInputs: Checkpoint, kSamplerDownscaleUnet
 - `ComfyUI-GGUF` — [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) *(2 nodes)*: UnetLoaderGGUF, UnetLoaderGGUFAdvanced
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [ComfyUI-Lora-Manager](https://github.com/willmiao/ComfyUI-Lora-Manager) *(2 nodes)*: CheckpointLoaderLM, UNETLoaderLM
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [ComfyUI-Lora-Manager](https://github.com/willmiao/ComfyUI-Lora-Manager) *(2 nodes)*: CheckpointLoaderLM, UNETLoaderLM
 - `comfyui-custom-scripts` — [ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts): CheckpointLoader
 - `comfyui-frame-interpolation` — [ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation): IFUnet VFI
 - `comfyui-ic-light` — [ComfyUI-IC-Light](https://github.com/kijai/ComfyUI-IC-Light): LoadAndApplyICLightUnet

@@ -69,7 +69,7 @@ def _apply_model_curation():
     except ImportError:
         return
 
-    veto = _load_json("hiddenswitch/config/model-veto.json")
+    veto = _load_json("_extension/hiddenswitch/config/model-veto.json")
     if veto:
         veto_set = set(veto.get("filenames", []))
         if veto_set:
@@ -80,7 +80,7 @@ def _apply_model_curation():
                 if removed:
                     _logger.info("[vscode-comfyui] Removed %d vetoed model(s) from %s", removed, getattr(db, "folder_names", "?"))
 
-    includes = _load_json("hiddenswitch/config/model-includes.json")
+    includes = _load_json("_extension/hiddenswitch/config/model-includes.json")
     if includes:
         for folder, entries in includes.items():
             if not isinstance(entries, list):

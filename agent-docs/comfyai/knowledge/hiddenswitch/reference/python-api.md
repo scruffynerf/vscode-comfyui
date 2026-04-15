@@ -1,5 +1,7 @@
 # Python API Reference
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 **This is a reference document. Look up what you need — do not read the whole file.**
 
 Come here from a task document (`run-workflow.md`, `tdd-loop.md`, etc.) when you need specifics. When you have what you need, return to the task document and continue.

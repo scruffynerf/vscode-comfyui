@@ -2,7 +2,7 @@
   "name": "vscode-comfyui",
   "displayName": "VS Code ComfyUI",
   "description": "ComfyUI rendered for your code editor",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "publisher": "scruffynerf",
   "repository": {
     "type": "git",
@@ -67,6 +67,31 @@
       {
         "command": "comfyui.refreshNodeCatalog",
         "title": "Refresh Node Catalog",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.listContributions",
+        "title": "List Knowledge Contributions",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.submitContributions",
+        "title": "Submit Knowledge Contributions",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.viewContributionDiff",
+        "title": "View Contribution Preview",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.markContributionMerged",
+        "title": "Archive Merged Contribution",
+        "category": "ComfyUI"
+      },
+      {
+        "command": "comfyui.discardContribution",
+        "title": "Discard Contribution",
         "category": "ComfyUI"
       }
     ],

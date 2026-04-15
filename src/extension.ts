@@ -10,6 +10,7 @@ import { watchApplyFile } from './patchBridge';
 import { ensureAgentGuide, ensureGitignore } from './agentFiles';
 import { installIntegrationNode, installIntegrationNodeTo, waitForServer } from './install';
 import { updateNodeCatalog } from './nodeCatalog';
+import { registerContributionCommands } from './contributions';
 
 export { ComfyStateProvider, stateProvider };
 
@@ -21,6 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	ensureAgentGuide(context);
 	ensureGitignore(context);
+	registerContributionCommands(context);
 
 	context.subscriptions.push(
 		vscode.workspace.registerTextDocumentContentProvider(ComfyStateProvider.scheme, stateProvider)

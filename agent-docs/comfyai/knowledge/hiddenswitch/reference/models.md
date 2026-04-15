@@ -59,7 +59,7 @@ Or use the HF API directly: `GET https://huggingface.co/api/models/<repo_id>` an
 
 If a model is not in `available-models.json`, it is not in the server's known list. There are two ways to add it:
 
-**Option A — Register via `hiddenswitch/config/model-includes.json`**: edit `comfyai/hiddenswitch/config/model-includes.json` and add the model to the relevant folder array. The Python init node reads this file at server startup and calls `add_known_models`. The server will auto-download the model on first use. Restart the server after editing.
+**Option A — Register via `_extension/hiddenswitch/config/model-includes.json`**: edit `comfyai/_extension/hiddenswitch/config/model-includes.json` and add the model to the relevant folder array. The Python init node reads this file at server startup and calls `add_known_models`. The server will auto-download the model on first use. Restart the server after editing.
 
 ```json
 {
@@ -190,7 +190,7 @@ Then restart the server so the panel picks it up.
 
 ## Removing models from the server's known list
 
-To prevent the server from downloading or offering a specific model, add its filename to `comfyai/hiddenswitch/config/model-veto.json`:
+To prevent the server from downloading or offering a specific model, add its filename to `comfyai/_extension/hiddenswitch/config/model-veto.json`:
 
 ```json
 {

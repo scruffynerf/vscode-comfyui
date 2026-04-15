@@ -1,5 +1,7 @@
 # Inpainting
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Task doc for masked editing. Read through before wiring. For whole-image transformation without a mask, see `knowledge/img2img.md` first — inpainting builds on the same foundation.
 
 ---

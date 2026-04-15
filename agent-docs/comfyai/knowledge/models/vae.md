@@ -1,5 +1,7 @@
 # VAE Selection and Troubleshooting
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Reference. Check symptoms first, then look up your model family for the correct VAE.
 
 ---

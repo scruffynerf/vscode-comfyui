@@ -20,7 +20,7 @@ Sorted by number of matching nodes (most relevant first).
 - `was-ns` — [WAS Node Suite (Revised)](https://github.com/ltdrdata/was-node-suite-comfyui) *(3 nodes)*: Create Video from Path, Video Dump Frames, Write to Video
 - `comfyui_ttp_toolset` — [Comfyui_TTP_Toolset](https://github.com/TTPlanetPig/Comfyui_TTP_Toolset) *(3 nodes)*: LTXVFirstLastFrameControl_TTP, LTXVMiddleFrame_TTP, TeaCacheHunyuanVideoSampler
 - `comfyui-art-venture` — [ComfyUI ArtVenture](https://github.com/sipherxyz/comfyui-art-venture) *(2 nodes)*: AnimateDiffFrameCalculator, LoadVideoFromUrl
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [ComfyUI-Lora-Manager](https://github.com/willmiao/ComfyUI-Lora-Manager) *(2 nodes)*: WanVideoLoraSelectLM, WanVideoLoraTextSelectLM
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [ComfyUI-Lora-Manager](https://github.com/willmiao/ComfyUI-Lora-Manager) *(2 nodes)*: WanVideoLoraSelectLM, WanVideoLoraTextSelectLM
 - `comfyui-segment-anything-2` — [ComfyUI-segment-anything-2](https://github.com/kijai/ComfyUI-segment-anything-2) *(2 nodes)*: Sam2VideoSegmentation, Sam2VideoSegmentationAddPoints
 - `ComfyUI-WanStartEndFramesNative` — [ComfyUI-WanStartEndFramesNative](https://github.com/Flow-two/ComfyUI-WanStartEndFramesNative) *(2 nodes)*: WanImageToVideo_F2, WanSkipEndFrameImages_F2
 - `comfyui-impact-pack` — [ComfyUI Impact Pack](https://github.com/ltdrdata/ComfyUI-Impact-Pack): SAM2VideoDetectorSEGS

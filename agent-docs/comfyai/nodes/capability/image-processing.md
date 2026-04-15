@@ -27,7 +27,7 @@ Sorted by number of matching nodes (most relevant first).
 - `comfyui-liveportraitkj` — [ComfyUI-LivePortraitKJ](https://github.com/kijai/ComfyUI-LivePortraitKJ): LivePortraitComposite
 - `comfyui-ppm` — [ComfyUI-ppm](https://github.com/pamparamm/ComfyUI-ppm): MaskCompositePPM
 - `kaytool` — [KayTool](https://github.com/kk8bit/kaytool): Color_Adjustment
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [LanPaint](https://github.com/scraed/LanPaint): LanPaint_MaskBlend
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [LanPaint](https://github.com/scraed/LanPaint): LanPaint_MaskBlend
 
 ---
 

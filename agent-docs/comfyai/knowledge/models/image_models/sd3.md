@@ -1,5 +1,7 @@
 # SD3 / SD3.5 Models
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Reference for Stable Diffusion 3 and 3.5 from Stability AI. All require a HuggingFace account with accepted terms — set `HF_TOKEN` before first use.
 
 For VAE troubleshooting (gray output, precision issues): `knowledge/models/vae.md`.

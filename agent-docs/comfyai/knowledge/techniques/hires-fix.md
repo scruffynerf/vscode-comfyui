@@ -1,5 +1,7 @@
 # Hires Fix (Two-Pass Upscale)
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Task doc — read it through before wiring. This pattern produces sharp high-resolution output without the artifacts of generating at large sizes directly.
 
 ---

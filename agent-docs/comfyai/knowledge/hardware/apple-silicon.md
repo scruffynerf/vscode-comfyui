@@ -1,5 +1,21 @@
 # Apple Silicon / MPS Performance
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
+## Quick Reference
+
+| Issue | Fix |
+|---|---|
+| Slow generation | Use --novram, close other apps, check free memory |
+| High step count | Flux Schnell only needs 4 steps |
+| Memory low | Check server-info.json → vram_free |
+
+**Key:** `--novram` is the correct default. CUDA benchmarks don't apply to MPS.
+
+---
+
+## Full Details
+
 Read this file when working on an Apple Silicon machine. When you are done, return to your task.
 
 ---

@@ -1,5 +1,7 @@
 # GraphBuilder — Building Workflows in Python
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Use this when you need to construct a ComfyUI workflow programmatically rather than by editing JSON by hand. GraphBuilder is the right tool for **generating complete new workflows from scratch**. For modifying an existing workflow in the panel, use the patch/apply bridge instead — see [comfyai/README.md](../README.md).
 
 <!-- TODO: The "load into GUI" path has open questions — see below. Until resolved, GraphBuilder output can only be run silently, not shown in the panel. -->

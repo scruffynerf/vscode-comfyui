@@ -1,5 +1,18 @@
 # SDXL Models
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
+## Quick Summary
+- **Load**: `CheckpointLoaderSimple` + separate fp16 VAE
+- **Resolution**: 1024×1024 native
+- **Prompt**: tags + descriptive phrases (hybrid)
+- **Sampler**: 20-30 steps, DPM++ 2M, CFG 5-8
+- **Refiner**: optional second-pass with refiner model
+
+---
+
+## Full Reference
+
 Reference for SDXL and community checkpoints built on it (Juggernaut XL, RealVisXL, etc.).
 
 For SD 1.5 (the older 512×512 architecture), see [sd15.md](sd15.md).

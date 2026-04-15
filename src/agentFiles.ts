@@ -29,8 +29,8 @@ function copyDirRecursive(src: string, dest: string, vars: Record<string, string
 }
 
 /**
- * Seeds a file from a template if it doesn't already exist at dest.
- * Used for user/agent-editable config files that should survive extension updates.
+ * Seeds a file from source, but only if it doesn't exist at dest.
+ * Creates parent directories as needed.
  */
 function seedFileOnce(srcPath: string, destPath: string, vars: Record<string, string>) {
     if (fs.existsSync(destPath)) { return; }
@@ -43,12 +43,34 @@ function seedFileOnce(srcPath: string, destPath: string, vars: Record<string, st
 }
 
 /**
+ * Seeds all files in a source directory into the dest directory.
+ * Only copies files that don't already exist at dest.
+ * Recursive — mirrors directory structure.
+ */
+function seedDirOnce(srcDir: string, destDir: string, vars: Record<string, string>) {
+    fs.mkdirSync(destDir, { recursive: true });
+    for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+        const srcPath = path.join(srcDir, entry.name);
+        const destPath = path.join(destDir, entry.name);
+        if (entry.isDirectory()) {
+            seedDirOnce(srcPath, destPath, vars);
+        } else if (TEXT_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+            seedFileOnce(srcPath, destPath, vars);
+        } else {
+            if (!fs.existsSync(destPath)) {
+                fs.copyFileSync(srcPath, destPath);
+            }
+        }
+    }
+}
+
+/**
  * Deploys agent docs, schemas, and the top-level guide into the install dir.
  * New agent docs are added by placing files in agent-docs/comfyai/ — no code
  * changes required (the recursive copy handles them automatically).
  *
- * User/agent-editable config files (hiddenswitch/config/) are seeded once from
- * templates in tools/ and never overwritten — user edits are preserved across
+ * User/agent-editable config files (_extension/hiddenswitch/config/) and wiki/ are seeded
+ * once from templates and never overwritten — user edits are preserved across
  * extension updates.
  */
 export function ensureAgentGuide(context: vscode.ExtensionContext) {
@@ -74,18 +96,42 @@ export function ensureAgentGuide(context: vscode.ExtensionContext) {
 
     try {
         // Deploy all agent docs: agent-docs/comfyai/ mirrors workspace comfyai/
-        copyDirRecursive(path.join(extPath, 'agent-docs/comfyai'), comfyaiDir, vars);
+        // EXCEPT wiki/ which is seeded (not overwritten) to preserve agent work
+        const wikiSrcDir = path.join(extPath, 'agent-docs/comfyai/wiki');
+        const wikiDestDir = path.join(comfyaiDir, 'wiki');
 
-        // Seed user/agent-editable config files from tools/ templates (once — never overwrite)
-        const hiddenswitchConfigDir = path.join(comfyaiDir, 'hiddenswitch', 'config');
+        // Copy all of comfyai/ EXCEPT wiki/ — that gets seeded separately below
+        const agentDocsDir = path.join(extPath, 'agent-docs/comfyai');
+        for (const entry of fs.readdirSync(agentDocsDir, { withFileTypes: true })) {
+            if (entry.name === 'wiki') { continue; }
+            const srcPath = path.join(agentDocsDir, entry.name);
+            const destPath = path.join(comfyaiDir, entry.name);
+            if (entry.isDirectory()) {
+                copyDirRecursive(srcPath, destPath, vars);
+            } else if (TEXT_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+                let content = fs.readFileSync(srcPath, 'utf-8');
+                for (const [key, value] of Object.entries(vars)) {
+                    content = content.replaceAll(`{${key}}`, value);
+                }
+                fs.writeFileSync(destPath, content, 'utf-8');
+            } else {
+                fs.copyFileSync(srcPath, destPath);
+            }
+        }
+
+        // Seed wiki/ base files — preserves existing wiki content (contributions, sessions, etc.)
+        seedDirOnce(wikiSrcDir, wikiDestDir, vars);
+
+        // Seed user/agent-editable config files from tools/hiddenswitch/config/ (once — never overwrite)
+        const extConfigDir = path.join(comfyaiDir, '_extension', 'hiddenswitch', 'config');
         seedFileOnce(
-            path.join(extPath, 'tools/model-includes-template.json'),
-            path.join(hiddenswitchConfigDir, 'model-includes.json'),
+            path.join(extPath, 'tools/hiddenswitch/config/model-includes.json'),
+            path.join(extConfigDir, 'model-includes.json'),
             vars
         );
         seedFileOnce(
-            path.join(extPath, 'tools/model-veto-template.json'),
-            path.join(hiddenswitchConfigDir, 'model-veto.json'),
+            path.join(extPath, 'tools/hiddenswitch/config/model-veto.json'),
+            path.join(extConfigDir, 'model-veto.json'),
             vars
         );
 

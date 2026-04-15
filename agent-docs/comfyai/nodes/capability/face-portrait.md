@@ -17,7 +17,7 @@ Sorted by number of matching nodes (most relevant first).
 - `was-ns` — [WAS Node Suite (Revised)](https://github.com/ltdrdata/was-node-suite-comfyui) *(2 nodes)*: Image Crop Face, Image Paste Face
 - `comfyui-art-venture` — [ComfyUI ArtVenture](https://github.com/sipherxyz/comfyui-art-venture) *(2 nodes)*: FaceDetailer, FaceDetailerPipe
 - `comfyui-advancedliveportrait` — [ComfyUI-AdvancedLivePortrait](https://github.com/PowerHouseMan/ComfyUI-AdvancedLivePortrait) *(2 nodes)*: AdvancedLivePortrait, ExpressionEditor
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [ComfyUI_InstantID](https://github.com/cubiq/ComfyUI_InstantID) *(2 nodes)*: FaceKeypointsPreprocessor, InstantIDFaceAnalysis
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [ComfyUI_InstantID](https://github.com/cubiq/ComfyUI_InstantID) *(2 nodes)*: FaceKeypointsPreprocessor, InstantIDFaceAnalysis
 - `crt-nodes` — [CRT-Nodes](https://github.com/plugcrypt/CRT-Nodes) *(2 nodes)*: FaceEnhancementPipelineWithInjection, PonyFaceEnhancementPipelineWithInjection
 - `comfyui-custom-scripts` — [ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts): MathExpression
 - `comfyui-rmbg` — [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG): FaceSegment

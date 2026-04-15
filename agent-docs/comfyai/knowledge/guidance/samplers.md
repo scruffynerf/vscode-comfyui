@@ -1,5 +1,7 @@
 # Samplers, CFG, and Steps
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Reference for KSampler settings. Look up what you need and return to your task.
 
 ---

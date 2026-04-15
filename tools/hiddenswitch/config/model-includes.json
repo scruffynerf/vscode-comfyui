@@ -1,5 +1,5 @@
 {
-  "_note": "Template seeded to comfyai/hiddenswitch/config/model-includes.json on first activation. Edit the deployed copy — changes here only take effect for new installs.",
+  "_note": "User/agent-editable config. Seeded from tools/ on first activation. Edits here persist across extension updates — deployed to comfyai/_extension/hiddenswitch/config/ on each activation. Add HF or CivitAI models to the server's known-model list here.",
   "_format": {
     "keys": "ComfyUI folder names: checkpoints, diffusion_models, loras, vae, clip, controlnet, upscale_models, clip_vision, style_models",
     "hf_entry": { "source": "hf", "repo_id": "<org/repo>", "filename": "<path/in/repo.safetensors>", "save_with_filename": "<optional: rename on disk>" },

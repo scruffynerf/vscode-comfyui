@@ -1,5 +1,7 @@
 # Prompting by Model Family
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Reference. Look up the model you are using and apply the appropriate style. Do not mix paradigms.
 
 ---

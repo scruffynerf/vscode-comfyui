@@ -1,5 +1,20 @@
 # ComfyUI Node Anatomy
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
+## Quick Reference
+
+| Section | Purpose |
+|---|---|
+| INPUT_TYPES() | Defines inputs (IMAGE, FLOAT, STRING, etc.) |
+| RETURN_TYPES | Output types |
+| FUNCTION | Method name to call |
+| CATEGORY | Location in node browser |
+
+**Full skeleton and patterns below.**
+
+---
+
 Reference for the structure of any ComfyUI node. Use this when writing a new node or analyzing an existing one. For hiddenswitch-specific packaging and testing, see `hiddenswitch/node-development/authoring.md`.
 
 ---

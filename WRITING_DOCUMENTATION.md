@@ -16,6 +16,23 @@ Files in `agent-docs/comfyai/` are source files. Their directory structure **mir
 
 ---
 
+## The knowledge/ vs wiki/ distinction
+
+`knowledge/` and `wiki/` serve different purposes:
+
+| Directory | Purpose | Who writes it | Survives reinstall? |
+|---|---|---|---|
+| `knowledge/` | Extension-provided patterns and reference | Extension developers | No — wiped on update |
+| `wiki/` | Agent workspace, personal notes, contributions | Agent (and user) | Yes — seeded once, never overwritten |
+
+**When documenting something for all users**: write it in `agent-docs/comfyai/knowledge/` and it will be deployed.
+
+**When the agent discovers something worth sharing**: write it to `wiki/contributions/` with a contribution header, then run `ComfyUI: Submit Knowledge Contributions` to propose it upstream.
+
+**When the agent is taking notes for themselves**: write to `wiki/index.md`, `wiki/sessions/`, or `wiki/scratch/`.
+
+---
+
 ## Principle 1: Gates, not orientations
 
 A `README.md` in any subdirectory has one job: **route the agent correctly, including routing them back out.**
@@ -116,23 +133,36 @@ The point is not to be pedantic — it's to catch the agent before they spend 20
 ```
 agent-docs/comfyai/                         deployed to → workspace comfyai/
   README.md
+  wiki/                                     ← AGENT WORKSPACE (seeded, preserved)
+    README.md                               ← agent orientation + conventions
+    index.md                                ← agent's running notebook
+    contributions/                          ← proposed upstream contributions (created by agent)
+  knowledge/                                ← EXTENSION PROVIDED (wiped on reinstall)
+    README.md
+    index.md                                ← router: find what you need
+    techniques/                             ← how to do specific things
+    guidance/                               ← settings and inputs
+    workflow/                               ← structure and patterns
+    reference/                              ← lookup docs (not read front-to-back)
+    hardware/                               ← hardware-specific guidance
+    models/                                 ← model-specific patterns
+    hiddenswitch/                           ← hiddenswitch Python library mode
+      README.md                             ← gate
+      run-workflow.md
+      graphbuilder.md
+      node-development/
+        README.md                           ← gate
+        authoring.md
+        tdd-loop.md
+        testing.md
+      reference/
+        python-api.md                       ← look-up only
+        models.md                           ← look-up only
   nodes/
     README.md
     find-a-node.md
   workflow-history/
     README.md
-  hiddenswitch/
-    README.md                               ← gate
-    run-workflow.md
-    graphbuilder.md
-    node-development/
-      README.md                             ← gate
-      authoring.md
-      tdd-loop.md
-      testing.md
-    reference/
-      python-api.md                         ← look-up only
-      models.md                             ← look-up only
 ```
 
 Non-comfyai files deployed separately:

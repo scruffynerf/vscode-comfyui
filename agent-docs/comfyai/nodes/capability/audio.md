@@ -13,7 +13,7 @@ Sorted by number of matching nodes (most relevant first).
 - `comfyui-kjnodes` — [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) *(6 nodes)*: AudioConcatenate, CreateAudioMask, LTX2AudioLatentNormalizingSampling, LTXVAudioVideoMask, PlaySoundKJ, SoundReactive
 - `crt-nodes` — [CRT-Nodes](https://github.com/plugcrypt/CRT-Nodes) *(6 nodes)*: AudioCompressor, AudioFrameAdjuster, AudioLoaderCrawl, AudioOrManualFrameCount, AudioPreviewer, SaveAudioWithPath
 - `comfyui-videohelpersuite` — [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) *(4 nodes)*: AudioToVHSAudio, LoadAudio, LoadAudioUpload, VHSAudioToAudio
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [ComfyUI-MMAudio](https://github.com/kijai/ComfyUI-MMAudio) *(4 nodes)*: MMAudioFeatureUtilsLoader, MMAudioModelLoader, MMAudioSampler, MMAudioVoCoderLoader
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [ComfyUI-MMAudio](https://github.com/kijai/ComfyUI-MMAudio) *(4 nodes)*: MMAudioFeatureUtilsLoader, MMAudioModelLoader, MMAudioSampler, MMAudioVoCoderLoader
 - `comfyui_llm_party` — [comfyui_LLM_party](https://github.com/heshengtao/comfyui_LLM_party) *(4 nodes)*: FeishuDownloadAudio, fish_tts, listen_audio, openai_tts
 - `comfyui-custom-scripts` — [ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts): PlaySound
 - `gguf` — [gguf](https://github.com/calcuis/gguf): AudioEncoderLoaderGGUF

@@ -612,6 +612,8 @@ export function formatWorkflowSummary(wf: Workflow): string {
 
     lines.push('# ComfyUI Workflow Summary');
     lines.push('');
+    lines.push('> **⚠️ DYNAMIC FILE — Re-read before every action. Any user UI interaction changes this.**');
+    lines.push('');
     lines.push(`**Type**: ${r.workflowType} | **Nodes**: ${nodeCountStr} | **Links**: ${r.linkCount}`);
     lines.push(
         `**Next IDs** (use when adding nodes/links): next_node_id: ${r.lastNodeId + 1}, next_link_id: ${r.lastLinkId + 1}`

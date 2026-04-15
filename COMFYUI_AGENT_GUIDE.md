@@ -1,38 +1,16 @@
 # ComfyUI — AI Agent Entry Point
 
-You've been asked to work with the user's ComfyUI setup.
+**STOP. Before reading further — ask the user: "What do you want?"**
 
-**Read this file for orientation, then stop and ask the user what they want before reading anything else.**
+If they've already answered, here's what to do:
 
-The sub-docs (`comfyai/README.md`, `comfyai/nodes/`, `comfyai/hiddenswitch/`, etc.) are large. Read only what your current task requires — don't pre-read them speculatively. The quick reference table below tells you exactly where to go once you have a task.
-
-Everything you need is in `comfyai/` in the same directory as this file (the ComfyUI install directory). [`comfyai/README.md`](comfyai/README.md) is the complete protocol and the single source of truth for agent interaction.
-
----
-
-## Quick orientation
-
-| What you want | Where to look |
+| What you want | How |
 |---|---|
-| Understand the current workflow | `comfyai/workflow-summary.md` (start here) |
-| Full workflow graph | `comfyai/workflow-state.readonly.json` |
-| Make changes to the workflow | Write to `comfyai/workflow-patch.json`, then trigger `comfyai/apply-patch-trigger.json` |
-| Queue/run the current workflow in the panel | Write `{"command": "queue", "ts": <n>}` to `comfyai/apply-patch-trigger.json` |
-| Stop an in-progress generation | Write `{"command": "interrupt", "ts": <n>}` to `comfyai/apply-patch-trigger.json` |
-| Confirm a trigger was processed | Read `comfyai/apply-response.json` after every trigger write |
-| Know what nodes are available | `comfyai/nodes/` — start with `index.md` |
-| Know what models are available | `comfyai/available-models.json` (may not exist — see `comfyai/README.md` for fallback) |
-| Revert a recent change | `comfyai/workflow-history/` — see `README.md` inside |
-| Run a workflow silently (no panel) | `comfyai/hiddenswitch/run-workflow.md` |
+| Read workflow | Read comfyai/workflow-summary.md |
+| Make changes | Read comfyai/knowledge/reference/patch-reference.md — format + trigger |
+| Run workflow | See comfyai/README.md — GUI bridge or hiddenswitch Python |
+| Find a node | Read comfyai/nodes/README.md |
+| Find knowledge | Read comfyai/knowledge/index.md |
+| Your notes | Read/write comfyai/wiki/ |
 
-**Critical rule**: Never write a full workflow JSON from scratch and never overwrite `workflow-state.readonly.json` directly. Always use the patch pattern. See `comfyai/README.md`.
-
----
-
-## Directory notes
-
-**`venv/` (or whatever `comfyui.venvDir` is set to)** — contains thousands of Python packages. Do not glob or scan it broadly. Use `venv/bin/pip list` to check installed packages, and go directly to known paths when you need source (e.g., `venv/lib/python3.x/site-packages/comfy/` for ComfyUI source). See `comfyai/hiddenswitch/README.md` for targeted search patterns.
-
-**`models/`** — may not reflect all available models. ComfyUI resolves model files from multiple locations (HuggingFace cache, registered paths, symlinks). Use `comfyai/available-models.json` to see what the server actually knows about — not directory listings.
-
-**`custom_nodes/vscode-comfyui-integration/`** — this is the extension's internal bridge node. It enables communication between the VSCode extension and the ComfyUI frontend. Do not modify it, do not read it for workflow information, and do not rely on its internals. It is managed entirely by the extension.
+After answering the user, read comfyai/README.md for the full protocol.

@@ -45,7 +45,7 @@ Each entry shows which specific node names matched, so you can confirm fit befor
 {installDir}/{venv}/bin/comfyui workflows requirements path/to/workflow.json
 ```
 
-If you find what's needed: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../hiddenswitch/install-custom-nodes.md), then tell the user to restart the ComfyUI server. The extension refreshes the node catalog automatically once the server is back up. You're done here.
+If you find what's needed: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../../knowledge/hiddenswitch/install-custom-nodes.md), then tell the user to restart the ComfyUI server. The extension refreshes the node catalog automatically once the server is back up. You're done here.
 
 ---
 
@@ -69,7 +69,7 @@ for p in packs:
         print("  ", p["repo"])
 ```
 
-If you find a match: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../hiddenswitch/install-custom-nodes.md). You're done here.
+If you find a match: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../../knowledge/hiddenswitch/install-custom-nodes.md). You're done here.
 
 ### 3B — Search by node class name
 
@@ -88,7 +88,7 @@ for pack_id, name, repo, classes in index:
         print("  ", ", ".join(hits[:8]))
 ```
 
-If you find a match: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../hiddenswitch/install-custom-nodes.md). You're done here.
+If you find a match: install it using [comfyai/hiddenswitch/install-custom-nodes.md](../../knowledge/hiddenswitch/install-custom-nodes.md). You're done here.
 
 ### 3C — Browser search (next to last resort)
 
@@ -103,6 +103,6 @@ If you find what's needed: install it, then tell the user to restart the ComfyUI
 Before committing to writing from scratch: check whether any node from steps 1–3 is *close* to what's needed. A node that does 80% of the job is a better starting point than a blank file — fork its source and modify rather than building from zero.
 
 If nothing works as-is, proceed to:
-[comfyai/hiddenswitch/node-development/README.md](../hiddenswitch/node-development/README.md)
+[comfyai/hiddenswitch/node-development/README.md](../../knowledge/hiddenswitch/node-development/README.md)
 
 Take note of any close match you found — the gate there will ask, and a fork is faster than scratch.

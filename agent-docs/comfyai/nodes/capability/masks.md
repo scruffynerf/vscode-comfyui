@@ -33,7 +33,7 @@ Sorted by number of matching nodes (most relevant first).
 - `comfyui-ic-light` — [ComfyUI-IC-Light](https://github.com/kijai/ComfyUI-IC-Light): BackgroundScaler
 - `cg-image-filter` — [cg-image-filter](https://github.com/chrisgoringe/cg-image-filter): Mask Image Filter
 - `ComfyUI-FramePackWrapper_PlusOne` — [ComfyUI-FramePackWrapper_PlusOne](https://github.com/xhiroga/ComfyUI-FramePackWrapper_PlusOne): ReferenceMaskList
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [LanPaint](https://github.com/scraed/LanPaint): LanPaint_MaskBlend
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [LanPaint](https://github.com/scraed/LanPaint): LanPaint_MaskBlend
 
 ---
 

@@ -16,7 +16,7 @@ Sorted by number of matching nodes (most relevant first).
 - `comfyui-easy-use` — [ComfyUI-Easy-Use](https://github.com/yolain/ComfyUI-Easy-Use): ipadapterApplyEncoder
 - `comfyui_pulid_flux_ll` — [ComfyUI_PuLID_Flux_ll](https://github.com/lldacing/ComfyUI_PuLID_Flux_ll): PulidFluxEvaClipLoader
 - `comfyui-supir` — [ComfyUI-SUPIR](https://github.com/kijai/ComfyUI-SUPIR): SUPIR_model_loader_v2_clip
-- git-only ([install guide](../hiddenswitch/install-custom-nodes.md)) — [Comfy-WaveSpeed](https://github.com/chengzeyi/Comfy-WaveSpeed): VelocatorLoadAndQuantizeClip
+- git-only ([install guide](../../knowledge/hiddenswitch/install-custom-nodes.md)) — [Comfy-WaveSpeed](https://github.com/chengzeyi/Comfy-WaveSpeed): VelocatorLoadAndQuantizeClip
 - `pulid_comfyui` — [PuLID_ComfyUI](https://github.com/cubiq/PuLID_ComfyUI): PulidEvaClipLoader
 - `comfyui_smznodes` — [ComfyUI_smZNodes](https://github.com/shiimizu/ComfyUI_smZNodes): smZ CLIPTextEncode
 - `comfyui-itools` — [ComfyUI-iTools](https://github.com/MohammadAboulEla/ComfyUI-iTools): iToolsVaePreview

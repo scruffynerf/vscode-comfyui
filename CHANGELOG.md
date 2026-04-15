@@ -2,7 +2,43 @@
 
 All notable changes to the "VS Code ComfyUI" extension will be documented in this file.
 
-## [Unreleased — toward 2.2.0]
+## [2.2.0] - 2026-04-15
+
+### Agent wiki system — persistent workspace and knowledge contributions
+
+Added a full wiki system for agents to take notes, document cross-workflow learnings, and contribute upstream improvements to the knowledge base.
+
+- **Agent workspace (`wiki/`)** — seeded once on extension activation, preserved across updates. Contains:
+  - `wiki/index.md` — agent's running notebook (user preferences, cross-workflow observations, active goals)
+  - `wiki/contributions/` — proposed knowledge additions with structured headers
+  - `wiki/sessions/` — per-session notes
+  - `wiki/scratch/` — temporary notes during tasks
+- **Write permissions clarified** — agents can write to `wiki/`, `apply-patch-trigger.json`, and any named patch file. All other files are read-only (extension writes them).
+- **Knowledge contribution workflow** — agents write contributions with a header (`target`, `type`, `confidence`, `tested`, `source`, `author`), then run **ComfyUI: Submit Knowledge Contributions** to open GitHub issues directly from the workspace.
+- **Contribution commands**: `ComfyUI: List Knowledge Contributions`, `ComfyUI: Submit Knowledge Contributions`, `ComfyUI: View Contribution Preview`, `ComfyUI: Archive Merged Contribution`, `ComfyUI: Discard Contribution`.
+
+### Knowledge base reorganization — restructured for agent navigation
+
+Reorganized `comfyai/knowledge/` into purpose-driven subdirectories that match how agents navigate:
+
+```
+knowledge/
+  index.md              ← router (unchanged)
+  techniques/           ← how to do things: img2img, inpainting, hires-fix, controlnet
+  guidance/             ← settings: samplers, resolution, prompting, loras, loras-stacking
+  workflow/             ← structure: core-pipeline, workflow-design, workflow-patterns
+  reference/            ← lookup: patch-reference, troubleshooting, node-anatomy
+  hardware/             ← hardware-specific: apple-silicon.md (grows to nvidia/amd/drivers)
+  models/               ← model-specific patterns (unchanged)
+  hiddenswitch/         ← moved from top level
+  schemas/              ← moved from top level
+```
+
+- **`hiddenswitch/`** moved into `knowledge/hiddenswitch/` — it's knowledge about silent execution, not a separate tool directory
+- **`patch-reference.md`** and **`troubleshooting.md`** moved to `knowledge/reference/`
+- **`schemas/`** moved to `knowledge/schemas/`
+- **`apple-silicon.md`** moved to new `knowledge/hardware/` directory — ready for nvidia, amd, CUDA/ROCm/MPS docs
+- Updated all cross-references across 11+ capability files and index files
 
 ### Bug fixes
 

@@ -1,5 +1,7 @@
 # Img2Img
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Task doc for image-to-image workflows. Read through before wiring. For inpainting (masked edits), see `knowledge/inpainting.md`.
 
 ---

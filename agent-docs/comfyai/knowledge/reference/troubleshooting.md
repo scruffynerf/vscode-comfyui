@@ -1,5 +1,21 @@
 # Troubleshooting
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
+## Quick Reference
+
+| Issue | Fix |
+|---|---|
+| Black screen | Add `--enable-cors-header` to startup args |
+| Patch didn't apply | Re-read workflow-summary.md, check apply-response.json |
+| Model not found | Use name from available-models.json, restart server |
+| Queue does nothing | Panel must be open, ts must change |
+| Generation slow | Check apple-silicon.md, use --novram on M-series |
+
+**Full details below.**
+
+---
+
 Reference for when things go wrong. Return here only when the normal flow fails.
 
 ---
@@ -37,7 +53,8 @@ If `apply-response.json` doesn't exist at all, the extension hasn't processed an
 
 1. Read `apply-response.json` — if `status` is `"error"`, the message explains why.
 2. Verify `apply-patch-trigger.json` is valid JSON and `ts` changed from your last write.
-3. If the patch applied but generation failed, check `user/comfyui.log` for validation errors.
+3. Verify you re-read `workflow-summary.md` and `workflow-state.readonly.json` right before writing the patch. The workflow may have changed since you last read it.
+4. If the patch applied but generation failed, check `user/comfyui.log` for validation errors.
 
 ---
 

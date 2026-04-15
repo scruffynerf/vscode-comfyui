@@ -1,5 +1,7 @@
 # Installing Custom Nodes
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Use this when you know what node you need and are ready to install it. For finding a node first, see [comfyai/nodes/find-a-node.md](../nodes/find-a-node.md).
 
 ---

@@ -1,5 +1,17 @@
 # Flux-Specific Patterns
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
+## Quick Summary
+- **Load**: AIO → `CheckpointLoaderSimple` | diffusion-only → `UNETLoader` + CLIP + VAE
+- **Guidance**: flux_guidance node (~3-5 strength)
+- **Sampler**: 20 steps, Euler/AE, CFG 1.0-3.0
+- **Prompt**: natural language, no LoRAs required, CLIP skip 1
+
+---
+
+## Full Reference
+
 Reference for working with Flux models. Flux differs from SD1.5 and SDXL in architecture, loading, prompting, and sampling. Read this before building or modifying any Flux workflow.
 
 Cross-references: `knowledge/prompting.md` (prompt style), `knowledge/models/vae.md` (VAE troubleshooting).

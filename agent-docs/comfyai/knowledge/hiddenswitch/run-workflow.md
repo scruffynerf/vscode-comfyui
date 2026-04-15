@@ -1,5 +1,7 @@
 # Running a Workflow Silently
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Use this when the user wants a result generated without touching their live workflow.
 
 When you're done here, return the result (typically a file path) to the user and stop. Do not modify their workflow unless they ask.

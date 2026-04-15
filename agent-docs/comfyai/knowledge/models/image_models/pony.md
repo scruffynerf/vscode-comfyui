@@ -1,5 +1,7 @@
 # Pony Diffusion V6 XL
 
+> Your notes: comfyai/wiki/ (persists across updates)
+
 Pony Diffusion V6 XL (PonyXL) is an SDXL-based model fine-tuned on anime, furry, and stylized art (Danbooru + e621 tags). It uses a score-based quality tag system.
 
 See [sdxl.md](sdxl.md) for base SDXL loading patterns (CheckpointLoaderSimple, VAE, refiner, etc.) — all apply here.

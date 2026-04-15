@@ -74,6 +74,9 @@ Find the entry that matches your current decision. Read only that file.
 **"How do I apply a patch / trigger a command?"**
 → `reference/apply-trigger-reference.md`
 
+**"How do I analyze a saved workflow file without loading it into the panel?"**
+→ `reference/apply-trigger-reference.md` (search for "analyze-workflow")
+
 **"Something went wrong — how do I debug?"**
 → `reference/troubleshooting.md`
 

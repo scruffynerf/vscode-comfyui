@@ -54,6 +54,20 @@ Need to generate from scratch?
 Not sure? → Start with Z-Turbo (fastest feedback loop)
 ```
 
+## Model Selection
+
+| Model | When to use | Notes |
+|-------|-------------|-------|
+| Z-Turbo | Fast iteration, testing prompts | Quick feedback loop |
+| Portrait Gen | High-quality portraits | See knowledge/workflows/ |
+| Flux | Quality text→image, editing | See knowledge/models/flux.md |
+| SDXL | Flexibility, refiner workflows | See knowledge/models/sdxl.md |
+| WanVideo | Video generation | See knowledge/models/video/ |
+
+For model-specific patterns, see `knowledge/models/` and `wiki/patterns/`.
+
+---
+
 ## Common Patterns
 
 Documented node combinations in `wiki/patterns/`:

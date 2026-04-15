@@ -28,11 +28,28 @@ The knowledge base (`knowledge/`) is fixed. Your notes (`wiki/`) grow with each 
 - Write findings to `wiki/scratch/` temporarily
 - Move important things to `wiki/index.md` (general learnings)
 - Move contributions to `wiki/contributions/` (things worth sharing)
+- Add patterns to `wiki/patterns/` (successful node combos or prompts)
 
 **Before ending the session:**
 - Clean up `wiki/scratch/`
 - Update `wiki/index.md` with what you learned
 - Note open questions for the next session
+
+---
+
+## Draft in scratch first
+
+**Don't edit `wiki/index.md` directly.** Instead:
+
+1. Write your draft in `wiki/scratch/`
+2. Decide where it belongs:
+   - Cross-session learnings → `wiki/index.md`
+   - Successful node combinations → `wiki/patterns/`
+   - Things worth sharing → `wiki/contributions/`
+   - User preferences → `wiki/state/user-preferences.json`
+3. Move it to the right place
+
+This keeps `index.md` from accumulating temporary noise and makes it easier to find things later.
 
 ---
 

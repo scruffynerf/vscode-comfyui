@@ -8,7 +8,7 @@
 
 **The wiki is your external memory.** Write things down so you can forget them and pick it back up later. Summarize, don't transcribe.
 
-**DO write here:**
+**Draft in scratch first.** Don't edit this file directly. Write drafts in `wiki/scratch/`, then move polished content to the right place (index, patterns, contributions, etc.).
 - User's preferences, favorites, and pet peeves
 - Things you've learned that aren't in the knowledge base
 - Cross-workflow patterns (how a specific node behaves differently in Flux vs SDXL)
@@ -22,11 +22,13 @@
 - Server config — check `server-info.json` instead
 - Things already documented in `knowledge/` — read there instead
 - Explicit user preferences — write to `state/user-preferences.json` instead
+- Successful node combinations or prompts — write to `wiki/patterns/` instead
 
 **Keep it current:**
 - Re-read this before every new action
 - Update it when you learn something new
 - If a section gets stale, refresh it or remove it
+- Keep pages short and easy to parse, split long lists of items apart and make indexed sub-pages to make it easier to find the right info.
 
 ---
 

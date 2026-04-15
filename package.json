@@ -15,7 +15,7 @@
     "Other",
     "Visualization"
   ],
-  "activationEvents": [],
+  "activationEvents": ["*"],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [

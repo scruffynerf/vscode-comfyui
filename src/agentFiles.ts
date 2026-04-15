@@ -12,6 +12,7 @@ const TEXT_EXTENSIONS = new Set(['.md', '.txt', '.json', '.yaml', '.yml', '.sh',
 function copyDirRecursive(src: string, dest: string, vars: Record<string, string>) {
     fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        if (entry.name.startsWith('.')) { continue; }
         const srcPath = path.join(src, entry.name);
         const destPath = path.join(dest, entry.name);
         if (entry.isDirectory()) {
@@ -89,11 +90,14 @@ export function ensureAgentGuide(context: vscode.ExtensionContext) {
     const vars: Record<string, string> = { installDir, venv: venvDir };
 
     // Clean up old filenames (workspace-root leftovers from earlier versions)
-    for (const old of ['AGENT_GUIDE.md', 'COMFYUI_AGENT_GUIDE.md']) {
+    for (const old of ['AGENT_GUIDE.md']) {
         const p = path.join(rootPath, old);
         if (fs.existsSync(p)) { try { fs.unlinkSync(p); } catch {} }
     }
 
+    console.log('[ComfyUI] ensureAgentGuide: extPath=' + extPath);
+    console.log('[ComfyUI] ensureAgentGuide: installDir=' + installDir);
+    console.log('[ComfyUI] ensureAgentGuide: comfyaiDir=' + comfyaiDir);
     try {
         // Deploy all agent docs: agent-docs/comfyai/ mirrors workspace comfyai/
         // EXCEPT wiki/ which is seeded (not overwritten) to preserve agent work
@@ -102,8 +106,9 @@ export function ensureAgentGuide(context: vscode.ExtensionContext) {
 
         // Copy all of comfyai/ EXCEPT wiki/ — that gets seeded separately below
         const agentDocsDir = path.join(extPath, 'agent-docs/comfyai');
+        fs.mkdirSync(comfyaiDir, { recursive: true });
         for (const entry of fs.readdirSync(agentDocsDir, { withFileTypes: true })) {
-            if (entry.name === 'wiki') { continue; }
+            if (entry.name === 'wiki' || entry.name.startsWith('.')) { continue; }
             const srcPath = path.join(agentDocsDir, entry.name);
             const destPath = path.join(comfyaiDir, entry.name);
             if (entry.isDirectory()) {

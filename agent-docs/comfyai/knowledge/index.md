@@ -72,7 +72,7 @@ Find the entry that matches your current decision. Read only that file.
 ## Reference
 
 **"How do I apply a patch / trigger a command?"**
-→ `reference/patch-reference.md`
+→ `reference/apply-trigger-reference.md`
 
 **"Something went wrong — how do I debug?"**
 → `reference/troubleshooting.md`

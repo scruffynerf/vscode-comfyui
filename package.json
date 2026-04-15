@@ -166,8 +166,8 @@
         "url": "./agent-docs/comfyai/schemas/workflow-patch.schema.json"
       },
       {
-        "fileMatch": "**/comfyai/apply-patch-trigger.json",
-        "url": "./agent-docs/comfyai/schemas/apply-patch-trigger.schema.json"
+        "fileMatch": "**/comfyai/apply-trigger.json",
+        "url": "./agent-docs/comfyai/schemas/apply-trigger.schema.json"
       }
     ],
     "keybindings": [

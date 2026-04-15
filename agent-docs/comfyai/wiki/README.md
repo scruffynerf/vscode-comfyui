@@ -16,6 +16,10 @@ Your workspace for notes, learnings, and proposed knowledge contributions.
 
 The knowledge base (`knowledge/`) is fixed. Your notes (`wiki/`) grow with each session.
 
+**The wiki is your external memory.** Write things down, summarize them, then you can forget them and pick it back up later. Don't try to hold everything in context — offload it here.
+
+**The wiki evolves with you.** This is a solid starting structure. Add, remove, and reshape files as you learn what works. The extension doesn't manage your wiki — you do.
+
 **At the start of every session:**
 1. Read `wiki/index.md` to get context from previous sessions
 2. Check `wiki/sessions/` for session-specific notes
@@ -39,7 +43,7 @@ The knowledge base (`knowledge/`) is fixed. Your notes (`wiki/`) grow with each 
 | `wiki/` | Notes, contributions, session logs |
 
 **Patches and triggers are in comfyai/ root (not wiki/):**
-- `apply-patch-trigger.json` — patch apply, queue, restart, etc.
+- `apply-trigger.json` — patch apply, queue, restart, etc.
 - Named patch files — workflow changes (any filename)
 
 **Read-only files — do not write to these:**
@@ -59,10 +63,18 @@ nodes/                     ← extension-generated, overwritten on refresh
 ```
 wiki/
   README.md              ← you are here
-  index.md               ← your running notebook
-  contributions/         ← proposed additions to the knowledge base
+  index.md               ← your running notebook (read quick-ref.md first)
+  quick-ref.md           ← workflow selection decision tree + session checklist
+  patterns/              ← common successful node combinations
+    index.md             ← pattern index
+    lighting-portraits.md
+    quick-to-quality.md
+    image-to-image-flows.md
+  state/                 ← structured JSON state (machine-readable)
+    user-preferences.json ← explicit user preferences
+  contributions/          ← proposed additions to the knowledge base
   sessions/              ← per-session notes
-  scratch/               ← temporary scratch space
+  scratch/               ← temporary scratch space + templates
 ```
 
 ---
@@ -79,9 +91,17 @@ Write things that **no other file tells you**:
 
 **Don't write:** installed models, workflow contents, server config — read those from the dynamic files instead.
 
-### `scratch/` — temporary notes
+### `scratch/` — temporary notes + templates
 
 Use while working on a task. Move useful things to `index.md` or `contributions/` when done.
+
+**Templates:**
+- `template-session-log.md` — auto-fill date/time for session notes
+- `template-finding.md` — structured finding format
+
+### `quick-ref.md` — workflow selection decision tree
+
+Single file for common decisions. Read this first, then `index.md` for context.
 
 ### `contributions/` — propose upstream improvements
 

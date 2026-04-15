@@ -3,10 +3,10 @@
 ## Which mode?
 
 **Does the user want to SEE this in their ComfyUI panel?**
-→ GUI bridge. Write patch to workflow-patch.json, trigger via apply-patch-trigger.json. See knowledge/reference/patch-reference.md.
+→ GUI bridge. Write patch to workflow-patch.json, trigger via apply-trigger.json. See knowledge/reference/apply-trigger-reference.md.
 
 **Does the user want to RUN what's already in the panel?**
-→ Write `{"command": "queue", "ts": N}` to apply-patch-trigger.json. Done.
+→ Write `{"command": "queue", "ts": N}` to apply-trigger.json. Done.
 
 **Silent run, testing code, building a node?**
 → hiddenswitch Python. See knowledge/hiddenswitch/README.md.
@@ -20,7 +20,7 @@ When in doubt: ask the user which they prefer.
 | File/Directory | Write to this |
 |---|---|
 | `wiki/` | Your workspace: notes, contributions, sessions |
-| `apply-patch-trigger.json` | Triggers: patch apply, queue, restart, commands |
+| `apply-trigger.json` | Triggers: patch apply, queue, restart, commands |
 | Any `.json` patch file | Workflow changes |
 
 **Read-only:** workflow-summary.md, workflow-state.readonly.json, apply-response.json, server-info.json, available-models.json, nodes/

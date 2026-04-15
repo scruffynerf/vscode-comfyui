@@ -9,17 +9,20 @@ All notable changes to the "VS Code ComfyUI" extension will be documented in thi
 Added a full wiki system for agents to take notes, document cross-workflow learnings, and contribute upstream improvements to the knowledge base.
 
 - **Agent workspace (`wiki/`)** — seeded once on extension activation, preserved across updates. Contains:
-  - `wiki/index.md` — agent's running notebook (user preferences, cross-workflow observations, active goals)
+  - `wiki/index.md` — agent's running notebook (user preferences, cross-workflow observations, active goals). Now reads `wiki/quick-ref.md` first; includes knowledge/wiki boundary clarification.
+  - `wiki/quick-ref.md` — single-file workflow selection decision tree + session start checklist + common patterns links.
   - `wiki/contributions/` — proposed knowledge additions with structured headers
   - `wiki/sessions/` — per-session notes
-  - `wiki/scratch/` — temporary notes during tasks
-- **Write permissions clarified** — agents can write to `wiki/`, `apply-patch-trigger.json`, and any named patch file. All other files are read-only (extension writes them).
+  - `wiki/scratch/` — temporary notes during tasks, now includes `template-session-log.md` and `template-finding.md`.
+  - `wiki/state/` — machine-readable JSON state (`user-preferences.json`).
+  - `wiki/patterns/` — documented node combinations (stub files for `lighting-portraits.md`, `quick-to-quality.md`, `image-to-image-flows.md`).
+- **Write permissions clarified** — agents can write to `wiki/`, `apply-trigger.json`, and any named patch file. All other files are read-only (extension writes them).
 - **Knowledge contribution workflow** — agents write contributions with a header (`target`, `type`, `confidence`, `tested`, `source`, `author`), then run **ComfyUI: Submit Knowledge Contributions** to open GitHub issues directly from the workspace.
 - **Contribution commands**: `ComfyUI: List Knowledge Contributions`, `ComfyUI: Submit Knowledge Contributions`, `ComfyUI: View Contribution Preview`, `ComfyUI: Archive Merged Contribution`, `ComfyUI: Discard Contribution`.
 
 ### Knowledge base reorganization — restructured for agent navigation
 
-Reorganized `comfyai/knowledge/` into purpose-driven subdirectories that match how agents navigate:
+Reorganized `comfyui/knowledge/` into purpose-driven subdirectories that match how agents navigate:
 
 ```
 knowledge/
@@ -27,7 +30,7 @@ knowledge/
   techniques/           ← how to do things: img2img, inpainting, hires-fix, controlnet
   guidance/             ← settings: samplers, resolution, prompting, loras, loras-stacking
   workflow/             ← structure: core-pipeline, workflow-design, workflow-patterns
-  reference/            ← lookup: patch-reference, troubleshooting, node-anatomy
+  reference/            ← lookup: apply-trigger-reference, troubleshooting, node-anatomy
   hardware/             ← hardware-specific: apple-silicon.md (grows to nvidia/amd/drivers)
   models/               ← model-specific patterns (unchanged)
   hiddenswitch/         ← moved from top level
@@ -64,6 +67,8 @@ knowledge/
 - Added **`{"command": "restart-server", "ts": n}`** trigger: hits the configured `restartEndpoint`, waits (up to `serverTimeout` ms) for the server to become responsive, reloads the panel, and refreshes the node catalog. Blocking — `apply-response.json` is written only after the server is back. Works with remote servers via `comfyui.serverUrl` setting.
 - Added **`{"command": "refresh-catalog", "ts": n}`** trigger: re-fetches `/object_info` and rebuilds all catalog files without a server restart. The programmatic equivalent of the "ComfyUI: Refresh Node Catalog" command palette entry. Use after installing a custom node to pick up its new node types immediately. Reports added/removed node counts in the response.
 - Added **`{"command": "open-panel", "ts": n}`** trigger: creates or reloads the ComfyUI panel in VS Code. Useful after a server restart if the panel did not reload automatically.
+- **Apply trigger renamed** — `apply-patch-trigger.json` → `apply-trigger.json` (and matching doc/schema rename) to reflect that the file handles commands far beyond patching.
+- **`notes` field for action logging** — optional `notes` field in `apply-trigger.json` (e.g., `"notes": "testing prompt variation A"`). Echoed back in `apply-response.json` and logged to `workflow-history/` for audit trail. All commands now write history entries with notes.
 
 ### Model curation — agent-editable config
 

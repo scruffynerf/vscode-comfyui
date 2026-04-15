@@ -236,26 +236,26 @@ Each of these maps to a specific bug found in testing. Run these to confirm fixe
 | "Replace the KSampler with KSamplerAdvanced — keep node ID 3." | apply-response returns `status: ok`, no type-change warning | test5/BUG-2 (false error on atomic same-ID replacement) |
 | "What models do I have installed?" *(when available-models.json is absent)* | File auto-populates from server on first panel state update | test5/GAP-2 (models file missing at panel open) |
 | "What are the current KSamplerAdvanced sampler settings?" *(workflow has KSamplerAdvanced)* | Summary shows seed, steps, cfg, sampler, scheduler correctly — not garbled | test5/BUG-3 (minLen 7→10, garbled fields) |
-| "How do I change the sampler settings?" or "I want to patch the workflow." | Agent opens patch-reference.md (not README.md) for the widget array reference | README restructure — patch content now in patch-reference.md |
+| "How do I change the sampler settings?" or "I want to patch the workflow." | Agent opens apply-trigger-reference.md (not README.md) for the widget array reference | README restructure — patch content now in apply-trigger-reference.md |
 
 ---
 
-## Group 13: patch-reference.md Routing (new doc structure) 🔬
+## Group 13: apply-trigger-reference.md Routing (new doc structure) 🔬
 
-These test whether the README restructure works in practice. README.md is now a pure router — all patch mechanics are in `patch-reference.md`. Agents should reach `patch-reference.md` when they need it, not re-read README looking for missing content.
+These test whether the README restructure works in practice. README.md is now a pure router — all trigger mechanics are in `apply-trigger-reference.md`. Agents should reach `apply-trigger-reference.md` when they need it, not re-read README looking for missing content.
 
 - "I need to write a patch that changes the sampler. What's the exact format?" 🔬
-  *(Should navigate to patch-reference.md, not scan README for the format)*
+  *(Should navigate to apply-trigger-reference.md, not scan README for the format)*
 - "What's the full `widgets_values` array for KSamplerAdvanced?" 🔬
-  *(Should find it in patch-reference.md "Widget array layouts" section)*
+  *(Should find it in apply-trigger-reference.md "Widget array layouts" section)*
 - "How do I trigger a patch apply? What file do I write and what format?" 🔬
-  *(Should land on patch-reference.md Step 2, not README)*
-- "What commands can I write to apply-patch-trigger.json?" 🔬
-  *(Should find the Commands table in patch-reference.md)*
+  *(Should land on apply-trigger-reference.md Step 2, not README)*
+- "What commands can I write to apply-trigger.json?" 🔬
+  *(Should find the Commands table in apply-trigger-reference.md)*
 - "I need to replace a KSampler with KSamplerAdvanced. What's the recipe?" 🔬
-  *(Should reach "Replacing a node's type" section in patch-reference.md)*
+  *(Should reach "Replacing a node's type" section in apply-trigger-reference.md)*
 
-**What to check**: Does the agent discover patch-reference.md via the README files table? Does it read just that file rather than re-reading README? Does it get all the information it needs from patch-reference.md without having to ask?
+**What to check**: Does the agent discover apply-trigger-reference.md via the README files table? Does it read just that file rather than re-reading README? Does it get all the information it needs from apply-trigger-reference.md without having to ask?
 
 ---
 
@@ -371,13 +371,13 @@ These are complete session scripts targeting specific untested areas. Each has a
 
 ### Session Script D: "Type Surgeon" — test5 Fix Verification
 
-**Focus**: Directly exercises the three test5 fixes: (1) BUG-2 atomic node type replacement returning `status: ok`, (2) available-models.json auto-retry, (3) KSamplerAdvanced summary correctness. Also verifies the README→patch-reference.md routing works in practice.
+**Focus**: Directly exercises the three test5 fixes: (1) BUG-2 atomic node type replacement returning `status: ok`, (2) available-models.json auto-retry, (3) KSamplerAdvanced summary correctness. Also verifies the README→apply-trigger-reference.md routing works in practice.
 
 **Command arc**:
 
 1. *(Group 0)* "What's in my current workflow?"
 2. *(Group 13)* "I need to change the sampler settings. How do I patch the workflow?" 🔬
-   *(Should route to patch-reference.md — if agent says "check README.md" that's the bug)*
+   *(Should route to apply-trigger-reference.md — if agent says "check README.md" that's the bug)*
 3. *(Group 4)* "What models do I have installed?" 🔬
    *(Confirm available-models.json exists and is populated. If absent: make a dummy patch + trigger to force a state update, then ask again)*
 4. *(Group 1)* "Increase steps to 25." *(simple patch — confirm baseline patch still works)*
@@ -386,13 +386,13 @@ These are complete session scripts targeting specific untested areas. Each has a
 6. *(Group 0)* "What are the current sampler settings?" *(read workflow-summary.md after step 5)* 🔬
    *(BUG-3 regression: summary should show correct KSamplerAdvanced fields — seed, steps, cfg, sampler, scheduler — not garbled values from wrong array indices)*
 7. *(Group 13)* "What's the full widget array for KSamplerAdvanced? I want to double-check my values." 🔬
-   *(Should land on "Widget array layouts" in patch-reference.md, not README)*
+   *(Should land on "Widget array layouts" in apply-trigger-reference.md, not README)*
 8. *(Group 2)* "Queue it and check the result." *(confirm the new node actually runs)*
 
 **What to watch for**:
-- Step 2: Does the agent discover patch-reference.md independently, or look in README and find nothing?
+- Step 2: Does the agent discover apply-trigger-reference.md independently, or look in README and find nothing?
 - Step 3: Is available-models.json present? If not — does asking about models a second time (after a patch/state-update) result in the file appearing?
 - Step 5: Does apply-response return `status: ok` or `status: error`? Old (broken) behavior: error + type-change warning even though remove_nodes was set.
 - Step 6: Does the workflow summary show KSamplerAdvanced fields in the correct order (seed at array[1], steps at array[3], not garbled)?
-- Step 7: Does patch-reference.md have everything the agent needs for KSamplerAdvanced arrays without asking the user?
+- Step 7: Does apply-trigger-reference.md have everything the agent needs for KSamplerAdvanced arrays without asking the user?
 - Bonus: After step 5, does the workflow-summary.md actually reflect the new KSamplerAdvanced node, or does it still show the old KSampler? (Exercises whether the rewrite path updates state correctly.)

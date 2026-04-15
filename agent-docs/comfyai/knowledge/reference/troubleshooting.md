@@ -52,7 +52,7 @@ If `apply-response.json` doesn't exist at all, the extension hasn't processed an
 ## Patch didn't appear in the panel
 
 1. Read `apply-response.json` — if `status` is `"error"`, the message explains why.
-2. Verify `apply-patch-trigger.json` is valid JSON and `ts` changed from your last write.
+2. Verify `apply-trigger.json` is valid JSON and `ts` changed from your last write.
 3. Verify you re-read `workflow-summary.md` and `workflow-state.readonly.json` right before writing the patch. The workflow may have changed since you last read it.
 4. If the patch applied but generation failed, check `user/comfyui.log` for validation errors.
 

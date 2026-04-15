@@ -135,7 +135,7 @@ class_name = idx["displayToClass"].get("K-Sampler", "K-Sampler")   # → "KSampl
 **Question 3**: Is there a `finalize_ui()` variant or layout utility that adds position metadata to API-format output?
 
 **Possible paths when resolved:**
-1. `sourcePath` trigger in `apply-patch-trigger.json` — if it accepts API format
+1. `sourcePath` trigger in `apply-trigger.json` — if it accepts API format
 2. Frontend API call (needs investigation)
 3. New hiddenswitch feature to push directly to a tab
 4. API → UI format conversion (if a converter exists)

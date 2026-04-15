@@ -1,22 +1,60 @@
-# Patch Reference
+# Apply Trigger Reference
 
-## Quick Example (changing a prompt)
+The apply trigger file (`apply-trigger.json`) is the bridge between the agent and the ComfyUI panel. It handles:
+- **Patches** — merge changes into the current workflow
+- **Full loads** — replace the entire workflow
+- **Commands** — queue, interrupt, restart, etc.
+
+> Read from top → do → stop. Only read further if your case doesn't fit.
+
+---
+
+## Quick Example (patching a prompt)
 
 **Step 1** — `workflow-patch.json`:
 ```json
 {"nodes": [{"id": 5, "widgets_values": ["new prompt text"]}]}
 ```
 
-**Step 2** — `apply-patch-trigger.json`:
+**Step 2** — `apply-trigger.json`:
 ```json
-{"patchPath": "./workflow-patch.json", "ts": N}
+{"patchPath": "./comfyai/workflow-patch.json", "ts": N}
 ```
 
-> Read from top → do → stop. Only read further if your case doesn't fit.
+**Always include `notes`** to log what you're doing. The notes appear in:
+- `apply-response.json` — echoed back so you can confirm what was done
+- `workflow-history/` — permanent audit trail
+
+```json
+{"patchPath": "./comfyai/workflow-patch.json", "ts": N, "notes": "testing prompt variation with darker lighting"}
+```
 
 ---
 
-## Full Protocol
+## Commands
+
+Write to `apply-trigger.json`. All commands support the optional `notes` field. Notes are echoed in `apply-response.json` and logged to `workflow-history/`.
+
+| Command | Effect | Example notes |
+|---|---|---|
+| `{"command": "queue", "ts": n}` | Run the workflow | `"testing prompt X"` |
+| `{"command": "queue", "count": 3, "ts": n}` | Queue N runs | |
+| `{"command": "queue-status", "ts": n}` | Check queue status | |
+| `{"command": "interrupt", "ts": n}` | Stop in-progress generation | `"aborting bad generation"` |
+| `{"command": "auto-layout", "ts": n}` | Auto-arrange nodes | `"cleaning up layout"` |
+| `{"command": "restart-server", "ts": n}` | Restart server, reload panel + catalog | `"after installing new model"` |
+| `{"command": "refresh-catalog", "ts": n}` | Refresh node catalog | `"new custom node installed"` |
+| `{"command": "open-panel", "ts": n}` | Open panel | |
+| `{"command": "testing-mode", "logPath": "...", "ts": n}` | Enable log reminders | |
+| `{"command": "testing-mode", "enabled": false, "ts": n}` | Disable log reminders | |
+
+**Queue triggers are fire-and-forget.** ComfyUI queues multiple runs.
+
+**After queueing:** Wait for completion, then `tail -20 user/comfyui.log`. Or poll `GET http://localhost:8188/history`.
+
+---
+
+## Patching a Workflow
 
 ### Two-step pattern
 
@@ -59,7 +97,8 @@ Removals are processed **before** adds/updates.
 ```json
 {
   "patchPath": "./comfyai/workflow-patch.json",
-  "ts": 1711812000
+  "ts": 1711812000,
+  "notes": "what this patch does"
 }
 ```
 
@@ -67,38 +106,17 @@ Change `ts` on every write — this fires the file watcher. Then **read `apply-r
 
 ---
 
-## Loading a full workflow
+## Loading a Full Workflow
 
 ```json
-{ "sourcePath": "./path/to/workflow.json", "ts": 1711812000 }
+{ "sourcePath": "./path/to/workflow.json", "ts": 1711812000, "notes": "loading Flux portrait template" }
 ```
 
-Write to `apply-patch-trigger.json`. Use `sourcePath` instead of `patchPath`. Replaces the entire workflow.
+Use `sourcePath` instead of `patchPath`. Replaces the entire workflow.
 
 ---
 
-## Commands
-
-| Command | Effect |
-|---|---|
-| `{"command": "queue", "ts": n}` | Run the workflow (once) |
-| `{"command": "queue", "count": 3, "ts": n}` | Queue N runs |
-| `{"command": "queue-status", "ts": n}` | Check queue status |
-| `{"command": "interrupt", "ts": n}` | Stop in-progress generation |
-| `{"command": "auto-layout", "ts": n}` | Auto-arrange nodes |
-| `{"command": "restart-server", "ts": n}` | Restart server, reload panel + catalog |
-| `{"command": "refresh-catalog", "ts": n}` | Refresh node catalog |
-| `{"command": "open-panel", "ts": n}` | Open panel |
-| `{"command": "testing-mode", "logPath": "feedback/testN", "ts": n}` | Enable log reminders |
-| `{"command": "testing-mode", "enabled": false, "ts": n}` | Disable log reminders |
-
-**Queue triggers are fire-and-forget.** ComfyUI queues multiple runs.
-
-**After queueing:** Wait for completion, then `tail -20 user/comfyui.log`. Or poll `GET http://localhost:8188/history`.
-
----
-
-## Widget array layouts
+## Widget Array Layouts
 
 `widgets_values` is a flat array — must supply the complete array.
 
@@ -120,7 +138,7 @@ INT widgets with "randomize / fixed / increment" serialize **two consecutive ent
 
 ---
 
-## Link slots vs widget positions
+## Link Slots vs Widget Positions
 
 **Two separate numbering systems.**
 
@@ -129,7 +147,7 @@ INT widgets with "randomize / fixed / increment" serialize **two consecutive ent
 
 ---
 
-## Replacing a node's type
+## Replacing a Node's Type
 
 1. **Find the old node's links** — read `workflow-state.readonly.json`.
 2. **Write an atomic patch** with `remove_nodes` + `nodes` + `links`:

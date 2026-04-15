@@ -11,7 +11,7 @@ At the start of your session:
 
 1. Create the session directory: `feedback/<session-name>/` (short descriptive name, e.g. `test4`)
 
-2. **Enable testing mode immediately** — write this to `comfyai/apply-patch-trigger.json`:
+2. **Enable testing mode immediately** — write this to `comfyai/apply-trigger.json`:
    ```json
    {"command": "testing-mode", "logPath": "feedback/<session-name>", "ts": 1}
    ```

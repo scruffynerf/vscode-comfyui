@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ComfyUI Patch",
-  "description": "A partial workflow update applied by writing to comfyai/apply-patch-trigger.json. Nodes and links are merged by ID into the current graph state.",
+  "description": "A partial workflow update applied by writing to comfyai/apply-trigger.json. Nodes and links are merged by ID into the current graph state.",
   "type": "object",
   "properties": {
     "nodes": {

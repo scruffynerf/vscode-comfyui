@@ -7,8 +7,8 @@ If they've already answered, here's what to do:
 | What you want | How |
 |---|---|
 | Read workflow | Read comfyai/workflow-summary.md |
-| Make changes | Read comfyai/knowledge/reference/patch-reference.md — format + trigger |
-| Run workflow | See comfyai/README.md — GUI bridge or hiddenswitch Python |
+| Make changes | Read comfyai/knowledge/reference/apply-trigger-reference.md — format + trigger |
+| Run workflow | See comfyai/README.md — routes to GUI bridge (apply-trigger.json) or hiddenswitch Python based on whether user wants to see it in panel |
 | Find a node | Read comfyai/nodes/README.md |
 | Find knowledge | Read comfyai/knowledge/index.md |
 | Your notes | Read/write comfyai/wiki/ |

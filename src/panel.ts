@@ -289,7 +289,7 @@ export class ComfyUIPanel {
                     (likely a <strong>403 Forbidden</strong> — stock ComfyUI blocks the <code>vscode-webview://</code> origin by default).</p>
                     <p><strong>Fix:</strong> add <code>--enable-cors-header</code> to your ComfyUI startup arguments.<br>
                     In VS Code settings, set <em>ComfyUI › Startup Args</em> to include <code>--enable-cors-header</code>, then restart ComfyUI.</p>
-                    <p style="color:#888; font-size:0.9em;">The hiddenswitch fork permits this origin automatically and does not require this flag.</p>
+                    
                 </div>
                 <iframe
                     id="comfy-frame"

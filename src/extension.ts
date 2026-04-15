@@ -242,8 +242,10 @@ export function activate(context: vscode.ExtensionContext) {
 			const isWin = os.platform() === 'win32';
 			const venvDir = config.get<string>('venvDir', '.venv');
 			const pythonVersion = config.get<string>('pythonVersion', '3.12');
+			const enableCors = config.get<boolean>('enableCorsHeader', true);
 			const startupArgs = config.get<string>('startupArgs', '');
-			const argsStr = startupArgs ? ` ${startupArgs}` : '';
+			const corsArgs = enableCors ? '--enable-cors-header' : '';
+			const argsStr = corsArgs + (startupArgs ? ` ${startupArgs}` : '');
 			const runCmd = args?.autoStart
 				? (isWin ? `; uv run --no-sync comfyui --enable-manager${argsStr}` : ` && uv run --no-sync comfyui --enable-manager${argsStr}`)
 				: (isWin ? '; Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"' : ' && echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"');
@@ -253,7 +255,7 @@ export function activate(context: vscode.ExtensionContext) {
 					? `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Host "Installing uv..."; irm https://astral.sh/uv/install.ps1 | iex; $env:Path += ";$HOME\\.cargo\\bin;$HOME\\.local\\bin" }`
 					: `if (!(Get-Command uv -ErrorAction SilentlyContinue)) { Write-Error "uv is not installed. Please enable 'comfyui.installUvAutomatically' or install it manually."; exit 1 }`;
 
-				terminal.sendText(`${checkUv}; uv venv ${venvDir} --python ${pythonVersion}; if ($?) { . ${venvDir}\\Scripts\\activate.ps1; uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd} }`);
+				terminal.sendText(`${checkUv}; uv venv ${venvDir} --python ${pythonVersion}; if ($?) { . ${venvDir}\\Scripts\\activate.ps1; uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI.git"${runCmd} }`);
 			} else {
 				const checkUv = installUv
 					? `if ! command -v uv >/dev/null 2>&1; then echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"; fi`
@@ -262,7 +264,7 @@ export function activate(context: vscode.ExtensionContext) {
 				terminal.sendText(`${checkUv} && \\
 uv venv ${venvDir} --python ${pythonVersion} && \\
 source ${venvDir}/bin/activate && \\
-uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/ComfyUI.git"${runCmd}`);
+uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI.git"${runCmd}`);
 			}
 		})
 	);
@@ -271,7 +273,7 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 		vscode.commands.registerCommand('comfyui.installDevelopmentComfyUI', async (args?: { autoStart?: boolean }) => {
 			const config = vscode.workspace.getConfiguration('comfyui');
 			const installUv = config.get<boolean>('installUvAutomatically', true);
-			const gitRepo = config.get<string>('gitRepo', 'https://github.com/hiddenswitch/ComfyUI.git');
+			const gitRepo = config.get<string>('gitRepo', 'https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI.git');
 			const defaultBranch = config.get<string>('defaultBranch', 'main');
 			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
 			const installDir = resolveInstallDir(
@@ -305,8 +307,10 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 			const isWin = os.platform() === 'win32';
 			const venvDir = config.get<string>('venvDir', '.venv');
 			const pythonVersion = config.get<string>('pythonVersion', '3.12');
+			const enableCors = config.get<boolean>('enableCorsHeader', true);
 			const startupArgs = config.get<string>('startupArgs', '');
-			const argsStr = startupArgs ? ` ${startupArgs}` : '';
+			const corsArgs = enableCors ? '--enable-cors-header' : '';
+			const argsStr = corsArgs + (startupArgs ? ` ${startupArgs}` : '');
 			const runCmd = args?.autoStart
 				? (isWin ? `; uv run --no-sync comfyui --enable-manager${argsStr}` : ` && uv run --no-sync comfyui --enable-manager${argsStr}`)
 				: (isWin ? '; Write-Host "Development installation complete."' : ' && echo "Development installation complete."');
@@ -339,8 +343,10 @@ uv pip install -e ".[dev]"${runCmd}`);
 
 			const isWin = os.platform() === 'win32';
 			const venvDir = config.get<string>('venvDir', '.venv');
+			const enableCors = config.get<boolean>('enableCorsHeader', true);
 			const startupArgs = config.get<string>('startupArgs', '');
-			const argsStr = startupArgs ? ` ${startupArgs}` : '';
+			const corsArgs = enableCors ? '--enable-cors-header' : '';
+			const argsStr = corsArgs + (startupArgs ? ` ${startupArgs}` : '');
 			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
 			const installDir = resolveInstallDir(
 				rawInstallDir,

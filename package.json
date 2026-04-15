@@ -138,6 +138,11 @@
           "default": ".venv",
           "description": "The name of the virtual environment directory (e.g., '.venv' or 'venv')."
         },
+        "comfyui.enableCorsHeader": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CORS headers for the embedded VS Code webview. Required for the panel to load ComfyUI. Disable only if you have external CORS proxy or are accessing a properly configured remote server."
+        },
         "comfyui.startupArgs": {
           "type": "string",
           "default": "",

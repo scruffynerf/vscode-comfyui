@@ -157,6 +157,16 @@
           "type": "boolean",
           "default": true,
           "description": "Enable AI agent integration: state file syncing, workflow summary, node catalog, and the apply-patch bridge. Set to false to use the extension as a plain embedded ComfyUI panel with no file-system side effects."
+        },
+        "comfyui.testingMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable testing mode for AI agent sessions. Each apply-response will include a log_file path and testing_reminder prompting the agent to write a structured log entry. Logs are written to comfyai/user-requested-testing/session-<timestamp>/. The agent can also enable this directly via apply-trigger.json (agent control takes priority while active)."
+        },
+        "comfyui.wikiMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable wiki mode for AI agent sessions. Each apply-response will include a wiki_reminder prompting the agent to record insights, summaries, todos, or patterns in the wiki/ directory. Recommended: enables the agent to build persistent memory across sessions."
         }
       }
     },

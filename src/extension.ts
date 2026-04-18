@@ -4,9 +4,9 @@ import * as os from 'os';
 import * as path from 'path';
 import { resolveInstallDir } from './installDir';
 import { createStatusBar, setStatus, resetStatus } from './statusBar';
-import { getInstallDir } from './config';
+import { getInstallDir, isTestingModeEnabled, isWikiModeEnabled } from './config';
 import { ComfyStateProvider, ComfyUIPanel, stateProvider } from './panel';
-import { watchApplyFile } from './patchBridge';
+import { watchApplyFile, applyModeSettings } from './patchBridge';
 import { ensureAgentGuide, ensureGitignore } from './agentFiles';
 import { installIntegrationNode, installIntegrationNodeTo, waitForServer } from './install';
 import { updateNodeCatalog } from './nodeCatalog';
@@ -33,12 +33,25 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push({
 		dispose: () => applyFileWatcher.dispose(),
 	});
+
+	// Apply initial mode settings from user preferences
+	const _initWf = vscode.workspace.workspaceFolders;
+	if (_initWf) {
+		applyModeSettings(getInstallDir(_initWf[0].uri.fsPath), isTestingModeEnabled(), isWikiModeEnabled());
+	}
+
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('comfyui.installDir')) {
 				applyFileWatcher.dispose();
 				applyFileWatcher = watchApplyFile(context);
 				ensureAgentGuide(context);
+			}
+			if (e.affectsConfiguration('comfyui.testingMode') || e.affectsConfiguration('comfyui.wikiMode')) {
+				const wf = vscode.workspace.workspaceFolders;
+				if (wf) {
+					applyModeSettings(getInstallDir(wf[0].uri.fsPath), isTestingModeEnabled(), isWikiModeEnabled());
+				}
 			}
 		})
 	);

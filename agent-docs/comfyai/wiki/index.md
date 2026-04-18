@@ -1,117 +1,48 @@
-# Project Knowledge Index
+# Project Dashboard
 
-> This file is your running notebook. **Read `quick-ref.md` first**, then this file. Update this as you learn things no other file tells you.
-
----
-
-## How to use this file well
-
-**The wiki is your external memory.** Write things down so you can forget them and pick it back up later. Summarize, don't transcribe.
-
-**Draft in scratch first.** Don't edit this file directly. Write drafts in `wiki/scratch/`, then move polished content to the right place (index, patterns, contributions, etc.).
-- User's preferences, favorites, and pet peeves
-- Things you've learned that aren't in the knowledge base
-- Cross-workflow patterns (how a specific node behaves differently in Flux vs SDXL)
-- What the user is working toward (active goals)
-- Open questions you're still solving
-- Session context (what was happening last time)
-
-**DON'T write here:**
-- Installed models — check `available-models.json` instead
-- Workflow contents — check `workflow-summary.md` instead
-- Server config — check `server-info.json` instead
-- Things already documented in `knowledge/` — read there instead
-- Explicit user preferences — write to `state/user-preferences.json` instead
-- Successful node combinations or prompts — write to `wiki/patterns/` instead
-
-**Keep it current:**
-- Re-read this before every new action
-- Update it when you learn something new
-- If a section gets stale, refresh it or remove it
-- Keep pages short and easy to parse, split long lists of items apart and make indexed sub-pages to make it easier to find the right info.
+> **This is your sticky note, not your notebook.** Keep it short — it should fit in one screen.
+> Overwrite it at the start/end of each session. Don't append to it; move learnings to `sessions/` or `memory.md`.
 
 ---
 
-## Quick Reference
+## Active Goal
 
-See `quick-ref.md` for workflow selection and session start checklist.
-
----
-
-## Knowledge vs Wiki Boundaries
-
-**`knowledge/`** is extension-provided. It is wiped on reinstall — treat it as read-only reference.
-- Purpose: documented patterns, how-tos, node reference
-- Do not edit directly — use `wiki/contributions/` to propose changes
-
-**`wiki/`** is your workspace. It persists across reinstalls.
-- Purpose: user preferences, experiments, local overrides, working notes
-- `wiki/` contents override `knowledge/` when they conflict
-
-**Rule of thumb:** If you learn something new, write it to `wiki/`. If it belongs in the permanent knowledge base, propose it via `wiki/contributions/`.
+[What you're working on right now — one line]
 
 ---
 
-## User Preferences
+## Open Tasks
 
-For explicit preferences (machine-readable), update `state/user-preferences.json`.
-
-For notes and context, write here:
-- **Favorites:** [nodes, workflows, settings this user prefers]
-- **Naming conventions:** [how they name nodes/workflows]
-- **Communication style:** [how they like to be updated]
+- [ ] [Next action]
 
 ---
 
-## Cross-Workflow Observations
+## Critical Gotchas
 
-[How specific nodes behave across different workflows]
+> Things that will burn you if you forget them — setup-specific, easy to overlook.
 
----
-
-## Active Goals
-
-- [What the user is working toward right now]
+- [None yet]
 
 ---
 
-## Open Questions
+## Last Session
 
-- [ ] Things still being figured out
-
----
-
-## Gotchas
-
-**Watch out for these** — specific to this setup, easy to forget between sessions:
-
-- [ ] [Model or node limitation — e.g. "X has memory issues with Y"]
-- [ ] [Workflow requirement — e.g. "Z needs 512x768 resolution"]
-- [ ] [Hardware limitation — e.g. "out of memory on steps > 20"]
-- [ ] [Known error — e.g. "X crashes if Y is connected"]
-
-**Rule:** When you hit something the hard way, add it here. Future sessions will thank you.
+**Date:** —
+**What happened:** [One or two sentences — the cliffhanger, if any]
+**Left off at:** [Exact state or next step]
 
 ---
 
-## Recent Learnings
+## Where to find things
 
-- YYYY-MM-DD: 
-- YYYY-MM-DD: 
-
----
-
-## Active Contributions
-
-Pending:
-- `contributions/` — 
-
-Submitted:
-- 
+| Need | File |
+|---|---|
+| Session notes and learnings | `wiki/sessions/` |
+| Stable cross-session knowledge | `wiki/memory.md` |
+| User preferences (machine-readable) | `wiki/state/user-preferences.json` |
+| Successful node / prompt patterns | `wiki/patterns/` |
+| Upstream contributions | `wiki/contributions/` |
 
 ---
 
-## Session Context
-
-**Last session:** 
-**This session:**
+*Updated: [date]*

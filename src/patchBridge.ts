@@ -115,6 +115,13 @@ export function saveHistory(rootPath: string, signalTs: number | undefined, patc
 
 // When set, every apply-response includes a testing_reminder with a per-action log filename.
 let testingLogDir: string | null = null;
+// When true, every apply-response includes a wiki_reminder nudging the agent to update the wiki.
+let wikiModeEnabled: boolean = false;
+// Track whether each mode is currently under agent control (vs user-setting-driven).
+// When agent-controlled, user setting changes do not override. When agent disables,
+// control falls back to the user setting.
+let agentControlsTesting: boolean = false;
+let agentControlsWiki: boolean = false;
 
 function writeApplyResponse(installDir: string, status: 'ok' | 'error', message: string, triggerTs?: number, notes?: string) {
     try {
@@ -153,10 +160,53 @@ function writeApplyResponse(installDir: string, status: 'ok' | 'error', message:
                 `Do this before continuing. Skipping it loses data we need.`,
             ].join(' ');
         }
+        if (wikiModeEnabled) {
+            payload.wiki_reminder = [
+                `Record anything useful in wiki/sessions/YYYY-MM-DD.md (per-session log — this is where most writing goes).`,
+                `Update wiki/index.md only if the active goal, open tasks, or gotchas changed (one screen max — overwrite, don't append).`,
+                `Add to wiki/memory.md only if something is proven stable across multiple sessions.`,
+                `Use wiki/patterns/ for node/prompt combos, wiki/state/user-preferences.json for user prefs.`,
+                `Skip if this response contained nothing new worth recording.`,
+            ].join(' ');
+        }
         fs.writeFileSync(tmp, JSON.stringify(payload, null, 2), 'utf-8');
         fs.renameSync(tmp, responsePath);
     } catch (err) {
         console.error('[ComfyUI] Failed to write apply-response.json:', err);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Mode-settings helpers (called by extension.ts on activation and config change)
+// ---------------------------------------------------------------------------
+
+/** Create a timestamped user-testing session dir and latch testingLogDir to it. */
+function activateUserTestingSession(installDir: string): void {
+    const ts = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const sessionDir = `comfyai/user-requested-testing/session-${ts}`;
+    try { fs.mkdirSync(path.join(installDir, sessionDir), { recursive: true }); } catch { /* ignore */ }
+    testingLogDir = sessionDir;
+}
+
+/**
+ * Apply user-setting-driven mode state. Called by extension.ts on activation and
+ * whenever comfyui.testingMode or comfyui.wikiMode changes.
+ * Agent-controlled modes (set via apply-trigger.json) are not overwritten.
+ */
+export function applyModeSettings(
+    installDir: string,
+    settingTestingEnabled: boolean,
+    settingWikiEnabled: boolean
+): void {
+    if (!agentControlsTesting) {
+        if (settingTestingEnabled && testingLogDir === null) {
+            activateUserTestingSession(installDir);
+        } else if (!settingTestingEnabled) {
+            testingLogDir = null;
+        }
+    }
+    if (!agentControlsWiki) {
+        wikiModeEnabled = settingWikiEnabled;
     }
 }
 
@@ -207,13 +257,38 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                 if (signalData && signalData.command === 'testing-mode') {
                     // TESTING MODE — latch or clear the log directory for per-action log file reminders
                     if (signalData.enabled === false) {
+                        // Agent explicitly disabling — clear agent control, fall back to user setting
+                        agentControlsTesting = false;
                         testingLogDir = null;
-                        writeApplyResponse(installDir, 'ok', 'Testing mode disabled', triggerTs);
+                        const settingOn = vscode.workspace.getConfiguration('comfyui').get<boolean>('testingMode', false);
+                        if (settingOn) { activateUserTestingSession(installDir); }
+                        writeApplyResponse(installDir, 'ok', testingLogDir
+                            ? `Testing mode handed back to user setting — using ${testingLogDir}/`
+                            : 'Testing mode disabled', triggerTs);
                     } else if (typeof signalData.logPath === 'string') {
+                        agentControlsTesting = true;
                         testingLogDir = signalData.logPath;
                         writeApplyResponse(installDir, 'ok', `Testing mode enabled — each response will specify a log file in ${testingLogDir}/`, triggerTs);
                     } else {
                         writeApplyResponse(installDir, 'error', 'testing-mode requires logPath (string) or enabled: false', triggerTs);
+                    }
+                    resetStatus();
+                    return;
+                }
+
+                if (signalData && signalData.command === 'wiki-mode') {
+                    // WIKI MODE — enable or disable wiki_reminder in every apply-response
+                    if (signalData.enabled === false) {
+                        // Agent explicitly disabling — fall back to user setting
+                        agentControlsWiki = false;
+                        wikiModeEnabled = vscode.workspace.getConfiguration('comfyui').get<boolean>('wikiMode', false);
+                        writeApplyResponse(installDir, 'ok', wikiModeEnabled
+                            ? 'Wiki mode handed back to user setting (still enabled)'
+                            : 'Wiki mode disabled', triggerTs);
+                    } else {
+                        agentControlsWiki = true;
+                        wikiModeEnabled = true;
+                        writeApplyResponse(installDir, 'ok', 'Wiki mode enabled — each response will include a wiki_reminder', triggerTs);
                     }
                     resetStatus();
                     return;

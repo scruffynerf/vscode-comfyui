@@ -20,7 +20,7 @@ See `quick-ref.md` for workflow selection guidance.
 
 When you discover a successful node combination or a prompt that works well:
 
-1. Create a file in `wiki/patterns/` with a descriptive name
+1. Create/Update a file in `wiki/patterns/` with a descriptive name
 2. Include:
    - **Context** — what were you trying to achieve?
    - **Nodes used** — exact node types and configuration (or prompt text for prompt patterns)

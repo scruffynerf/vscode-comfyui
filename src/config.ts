@@ -19,3 +19,13 @@ export function getInstallDir(workspaceRoot: string): string {
 export function isAiEnabled(): boolean {
     return vscode.workspace.getConfiguration('comfyui').get<boolean>('enableAiFeatures', true);
 }
+
+/** Returns true when comfyui.testingMode is enabled by the user. */
+export function isTestingModeEnabled(): boolean {
+    return vscode.workspace.getConfiguration('comfyui').get<boolean>('testingMode', false);
+}
+
+/** Returns true when comfyui.wikiMode is enabled by the user. */
+export function isWikiModeEnabled(): boolean {
+    return vscode.workspace.getConfiguration('comfyui').get<boolean>('wikiMode', false);
+}

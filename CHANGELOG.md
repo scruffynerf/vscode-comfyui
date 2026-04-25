@@ -2,6 +2,12 @@
 
 All notable changes to the "VS Code ComfyUI" extension will be documented in this file.
 
+## [2.2.1] - 2026-04-25
+
+### Bug fixes
+
+- **Missing space in `--enable-manager` argument**: when `enableCorsHeader` was `true` and `startupArgs` was empty, the launch command concatenated `--enable-manager` directly with `--enable-cors-header` (e.g. `uv run --no-sync comfyui --enable-manager--enable-cors-header`). Fixed by always adding a space before the args string. Affected all three install/run entry points.
+
 ## [2.2.0] - 2026-04-25
 
 ### Agent wiki system — persistent workspace and knowledge contributions

@@ -276,9 +276,9 @@ export function activate(context: vscode.ExtensionContext) {
 			const enableCors = config.get<boolean>('enableCorsHeader', true);
 			const startupArgs = config.get<string>('startupArgs', '');
 			const corsArgs = enableCors ? '--enable-cors-header' : '';
-			const argsStr = corsArgs + (startupArgs ? ` ${startupArgs}` : '');
+			const argsStr = (corsArgs ? `${corsArgs}` : '') + (startupArgs ? ` ${startupArgs}` : '');
 			const runCmd = args?.autoStart
-				? (isWin ? `; uv run --no-sync comfyui --enable-manager${argsStr}` : ` && uv run --no-sync comfyui --enable-manager${argsStr}`)
+				? (isWin ? `; uv run --no-sync comfyui --enable-manager ${argsStr}` : ` && uv run --no-sync comfyui --enable-manager ${argsStr}`)
 				: (isWin ? '; Write-Host "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"' : ' && echo "Installation complete. You can run comfyui with: ComfyUI: Run Hiddenswitch ComfyUI"');
 
 			if (isWin) {
@@ -341,9 +341,9 @@ uv pip install --torch-backend=auto "comfyui@git+https://github.com/hiddenswitch
 			const enableCors = config.get<boolean>('enableCorsHeader', true);
 			const startupArgs = config.get<string>('startupArgs', '');
 			const corsArgs = enableCors ? '--enable-cors-header' : '';
-			const argsStr = corsArgs + (startupArgs ? ` ${startupArgs}` : '');
+			const argsStr = (corsArgs ? `${corsArgs}` : '') + (startupArgs ? ` ${startupArgs}` : '');
 			const runCmd = args?.autoStart
-				? (isWin ? `; uv run --no-sync comfyui --enable-manager${argsStr}` : ` && uv run --no-sync comfyui --enable-manager${argsStr}`)
+				? (isWin ? `; uv run --no-sync comfyui --enable-manager ${argsStr}` : ` && uv run --no-sync comfyui --enable-manager ${argsStr}`)
 				: (isWin ? '; Write-Host "Development installation complete."' : ' && echo "Development installation complete."');
 
 			if (isWin) {
@@ -433,10 +433,10 @@ uv pip install -e ".[dev]"${runCmd}`);
 			terminal.show();
 			if (isWin) {
 				terminal.sendText(`if (Test-Path "${installDir}\\ComfyUI") { Set-Location "${installDir}\\ComfyUI" } else { Set-Location "${installDir}" }`);
-				terminal.sendText(`. ${venvDir}\\Scripts\\Activate.ps1; uv run --no-sync comfyui --enable-manager${argsStr}`);
+				terminal.sendText(`. ${venvDir}\\Scripts\\Activate.ps1; uv run --no-sync comfyui --enable-manager ${argsStr}`);
 			} else {
 				terminal.sendText(`if [ -d "${installDir}/ComfyUI" ]; then cd "${installDir}/ComfyUI"; else cd "${installDir}"; fi`);
-				terminal.sendText(`source ${venvDir}/bin/activate && uv run --no-sync comfyui --enable-manager${argsStr}`);
+				terminal.sendText(`source ${venvDir}/bin/activate && uv run --no-sync comfyui --enable-manager ${argsStr}`);
 			}
 
 			vscode.window.showInformationMessage('Starting ComfyUI Server... Waiting for it to become responsive.');

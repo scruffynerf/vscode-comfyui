@@ -2,18 +2,21 @@
 
 All notable changes to the "VS Code ComfyUI" extension will be documented in this file.
 
-## [2.2.0] - 2026-04-15
+## [2.2.0] - 2026-04-25
 
 ### Agent wiki system — persistent workspace and knowledge contributions
 
 Added a full wiki system for agents to take notes, document cross-workflow learnings, and contribute upstream improvements to the knowledge base.
 
-- **Agent workspace (`wiki/`)** — seeded once on extension activation, preserved across updates. Contains:
-  - `wiki/index.md` — agent's running notebook (user preferences, cross-workflow observations, active goals). Now reads `wiki/quick-ref.md` first; includes knowledge/wiki boundary clarification.
+- **Wiki-mode reminders** — added automated `wiki-mode`, which injects a reminder message into `apply-response.json` after successful operations, encouraging agents to record insights, summaries, and todos in the wiki. Can be toggled via Agent trigger `{"command": "wiki-mode", "enabled": true}` or configured as a user setting in VS Code alongside `testing-mode`.
+- **Agent workspace (`wiki/`)** — seeded once on extension activation, preserved across updates. Restructured to prevent index bloating:
+  - `wiki/README.md` — central index routing agents to memory, sessions, and contributions.
+  - `wiki/index.md` — agent's running notebook (user preferences, cross-workflow observations, active goals). 
+  - `wiki/memory.md` — structured persistent knowledge, project context, and lessons learned across sessions.
   - `wiki/quick-ref.md` — single-file workflow selection decision tree + session start checklist + common patterns links.
   - `wiki/contributions/` — proposed knowledge additions with structured headers
-  - `wiki/sessions/` — per-session notes
-  - `wiki/scratch/` — temporary notes during tasks, now includes `template-session-log.md` and `template-finding.md`.
+  - `wiki/sessions/` — per-session notes. Now includes `template.md` for consistent logging.
+  - `wiki/scratch/` — temporary notes during tasks, now includes `template-finding.md`.
   - `wiki/state/` — machine-readable JSON state (`user-preferences.json`).
   - `wiki/patterns/` — documented node combinations (stub files for `lighting-portraits.md`, `quick-to-quality.md`, `image-to-image-flows.md`).
 - **Write permissions clarified** — agents can write to `wiki/`, `apply-trigger.json`, and any named patch file. All other files are read-only (extension writes them).
@@ -62,11 +65,18 @@ knowledge/
 - Added **`comfyai/nodes/output-slot-index.json`**: slot array for every node's outputs, in slot order. Each entry: `{name, type}`. Index = slot number for GraphBuilder `.out(N)` and patch link `src_slot` values. No more guessing from names alone.
 - Added **`comfyai/nodes/widget-enums.json`**: valid string values for every COMBO (enum) widget input, excluding model file lists (those are already in `available-models.json`). Covers sampler names, schedulers, upscale methods, and any other string-enum input. Preferred lookup before falling back to `node-registry.json`.
 
+### Workspace lifecycle — no more auto-install on activation
+
+- **Lazy workspace initialization**: the agent workspace (`comfyai/`) is no longer installed automatically on extension activation. Instead, it is created on-demand — the first time the agent writes to `apply-trigger.json` and the workspace does not yet exist. This prevents the workspace from being added to VS Code windows that don't need it.
+- **`ComfyUI: Install Agent Workspace` command**: manual fallback command to trigger workspace installation at any time from the command palette.
+- **Fixed duplicate error**: patchBridge.ts now correctly maps EEXIST to `status: already_exists` instead of `status: error` when the workspace already exists during lazy init.
+
 ### Agent trigger commands — new built-in operations
 
 - Added **`{"command": "restart-server", "ts": n}`** trigger: hits the configured `restartEndpoint`, waits (up to `serverTimeout` ms) for the server to become responsive, reloads the panel, and refreshes the node catalog. Blocking — `apply-response.json` is written only after the server is back. Works with remote servers via `comfyui.serverUrl` setting.
 - Added **`{"command": "refresh-catalog", "ts": n}`** trigger: re-fetches `/object_info` and rebuilds all catalog files without a server restart. The programmatic equivalent of the "ComfyUI: Refresh Node Catalog" command palette entry. Use after installing a custom node to pick up its new node types immediately. Reports added/removed node counts in the response.
 - Added **`{"command": "open-panel", "ts": n}`** trigger: creates or reloads the ComfyUI panel in VS Code. Useful after a server restart if the panel did not reload automatically.
+
 - **Apply trigger renamed** — `apply-patch-trigger.json` → `apply-trigger.json` (and matching doc/schema rename) to reflect that the file handles commands far beyond patching.
 - **`notes` field for action logging** — optional `notes` field in `apply-trigger.json` (e.g., `"notes": "testing prompt variation A"`). Echoed back in `apply-response.json` and logged to `workflow-history/` for audit trail. All commands now write history entries with notes.
 - **`analyze-workflow` command** — new trigger command to analyze a workflow JSON file without loading it into the panel. Takes `workflowPath` and `outputFile` fields. Writes the same analysis format as `workflow-summary.md` to a specified output path. Useful for analyzing saved templates or user-shared workflows.

@@ -2,6 +2,8 @@
 
 **Read this first.** For details, see linked files.
 
+**Agent editable** - make this more useful/correct for yourself over time
+
 ---
 
 ## Workflow Selection
@@ -71,6 +73,7 @@ For model-specific patterns, see `knowledge/models/` and `wiki/patterns/`.
 ## Common Patterns
 
 Documented node combinations in `wiki/patterns/`:
+
 - [[lighting-portraits]] — portrait lighting setups
 - [[quick-to-quality]] — Z-Turbo → Portrait Gen progression
 - [[image-to-image-flows]] — Flux edit patterns

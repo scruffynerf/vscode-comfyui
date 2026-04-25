@@ -37,7 +37,7 @@ dependencies = ["torch"]
 
 [project.optional-dependencies]
 test = [
-    "comfyui @ git+https://github.com/hiddenswitch/ComfyUI.git",
+    "comfyui @ git+https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI.git",
     "pytest",
     "pytest-asyncio",
     "pillow",

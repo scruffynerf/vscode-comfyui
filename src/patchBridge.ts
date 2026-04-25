@@ -7,6 +7,7 @@ import { stateProvider, ComfyUIPanel } from './panel';
 import { waitForServer } from './install';
 import { updateNodeCatalog } from './nodeCatalog';
 import { formatWorkflowSummary, Workflow } from './workflowAnalyzer';
+import { isAgentWorkspaceInitialized, initializeAgentWorkspace } from './agentFiles';
 
 // ---------------------------------------------------------------------------
 // Workflow merge
@@ -245,6 +246,12 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
             }
 
             if (!isAiEnabled()) { return; }
+
+            // Lazy init: ensure agent workspace exists before processing the trigger
+            if (!isAgentWorkspaceInitialized(installDir)) {
+                initializeAgentWorkspace(context, installDir);
+            }
+
             setStatus('$(sync~spin) ComfyUI: Patching...');
             let triggerTs: number | undefined;
             let signalData: any = null;

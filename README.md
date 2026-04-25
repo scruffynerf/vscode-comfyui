@@ -31,16 +31,9 @@ Are you a developer or technical artist who works with both ComfyUI and code? Ti
 
 ### Black screen when connecting to a local stock ComfyUI
 
-If you point the extension at your own ComfyUI install (not the hiddenswitch fork managed by this extension) and get a black screen, ComfyUI is blocking the connection.
+If you point the extension at your own ComfyUI install and get a black screen, ComfyUI is blocking the connection.
 
-VS Code's webview panel uses a `vscode-webview://` origin. Stock ComfyUI rejects requests from unknown origins with a 403. The fix is to start ComfyUI with `--enable-cors-header`:
-
-```
-# In VS Code settings, add to ComfyUI: Startup Args:
---enable-cors-header
-```
-
-Or pass it directly when launching ComfyUI. The hiddenswitch fork handles this automatically — no flag needed.
+VS Code's webview panel uses a `vscode-webview://` origin. ComfyUI rejects requests from unknown origins with a 403. The fix is to enable the **ComfyUI: Enable Cors Header** setting (enabled by default) — this adds `--enable-cors-header` to the startup args for the embedded webview relay.
 
 You'll also need the bridge custom node for full two-way integration (workflow state sync, patch/queue commands). Use **ComfyUI: Install Integration Node to External ComfyUI...** from the Command Palette and select your ComfyUI's `custom_nodes/` folder.
 
@@ -57,9 +50,12 @@ All commands are available via the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+
 | **Install Development ComfyUI (Git Clone)** | Clone the repo and install as an editable package for node development | — |
 | **Install/Update VSCode Integration Node (Hiddenswitch)** | Update the bridge custom node inside the extension-managed ComfyUI install | — |
 | **Install Integration Node to External ComfyUI...** | Install the bridge into any ComfyUI's `custom_nodes` folder via a folder picker | — |
+| **Install Agent Workspace** | Deploy the AI agent workspace (`comfyai/`) to the install directory. Run this manually if the workspace doesn't exist and you want to use the agent protocol. | — |
 | **Refresh Node Catalog** | Query `/object_info` and rebuild `comfyai/nodes/` (index, per-class lists, raw registry). Also runs silently on panel open. Deployed alongside the appmana pip catalog (2500+ installable packages) and capability index (find packs by what they can do). | — |
 | **View Current ComfyUI State (JSON)** | Open the live `comfyai/workflow-state.readonly.json` as a read-only document in the editor | — |
 | **Apply Currently Open Workflow JSON** | Load the JSON file in the active editor tab directly into the ComfyUI panel. Requires the bridge custom node to be installed. | — |
+| **List Knowledge Contributions** | List agent-written knowledge contributions pending review in `wiki/contributions/` | — |
+| **Submit Knowledge Contributions** | Open GitHub issues for pending contributions in `wiki/contributions/` | — |
 
 ## Configuration
 
@@ -73,13 +69,16 @@ All commands are available via the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+
 | `comfyui.pythonVersion` | `3.12` | Python version for the virtual environment (e.g. `3.12`, `3.11`, `/usr/bin/python3.12`). |
 | `comfyui.startupArgs` | _(empty)_ | Extra arguments passed to ComfyUI on startup (e.g. `--listen 0.0.0.0 --port 8189`). |
 | `comfyui.installUvAutomatically` | `true` | Automatically install `uv` if it isn't found during installation. |
-| `comfyui.gitRepo` | `https://github.com/hiddenswitch/ComfyUI.git` | Git repository URL for development installations. |
+| `comfyui.gitRepo` | `https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI.git` | Git repository URL for development installations. |
 | `comfyui.defaultBranch` | `main` | Branch to check out for development installations. |
-| `comfyui.enableAiFeatures` | `true` | Enable AI agent integration (state files, summary, node catalog, apply-patch bridge). Set to `false` to use the extension as a plain embedded panel with no file-system side effects. |
+| `comfyui.enableCorsHeader` | `true` | Enable CORS headers for the embedded VS Code webview. Required for the panel to load. Disable only if using an external CORS proxy or accessing a properly configured remote server. |
+| `comfyui.enableAiFeatures` | `true` | Enable AI agent integration (state files, summary, node catalog, apply-patch bridge). Set to `false` for plain embedded panel mode. |
+| `comfyui.testingMode` | `false` | Enable per-action log file reminders for AI agent sessions. |
+| `comfyui.wikiMode` | `false` | Prompt agents to record insights in the wiki/ directory after each action. Recommended for building persistent memory across sessions. |
 
 ## Usage
 
-1. Start your ComfyUI server.
+1. Start your ComfyUI server (if external)
 2. Open your code editor.
 3. Use the Command Palette to run **ComfyUI: Open/Reload ComfyUI Editor**.
 4. Use **ComfyUI: Restart Server** after developing custom nodes.
@@ -113,7 +112,7 @@ vsce package --allow-star-activation
 Found a bug or want to contribute? Visit our [GitHub repository](https://github.com/scruffynerf/vscode-comfyui).
 
 > [!NOTE]
-> This is a fork of [piiq/code-comfyui](https://github.com/piiq/code-comfyui) now maintained by [scruffynerf](https://github.com/scruffynerf).
+> This was originally a fork of [piiq/code-comfyui](https://github.com/piiq/code-comfyui) but now has much more extensive AI support, and is maintained by [scruffynerf](https://github.com/scruffynerf).
 
 ## License
 

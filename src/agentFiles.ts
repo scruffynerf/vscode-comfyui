@@ -66,6 +66,31 @@ function seedDirOnce(srcDir: string, destDir: string, vars: Record<string, strin
 }
 
 /**
+ * Check if the agent workspace has been initialized (comfyai/ directory exists with content).
+ */
+export function isAgentWorkspaceInitialized(installDir: string): boolean {
+    const comfyaiDir = path.join(installDir, 'comfyai');
+    if (!fs.existsSync(comfyaiDir)) { return false; }
+    // Check for at least one known file
+    const knownFiles = ['workflow-summary.md', 'README.md', 'knowledge'];
+    for (const f of knownFiles) {
+        if (fs.existsSync(path.join(comfyaiDir, f))) { return true; }
+    }
+    return false;
+}
+
+/**
+ * Initialize the agent workspace if not already initialized.
+ * Called lazily when the agent first tries to use the file watcher.
+ * Returns true if initialized (was missing and now created), false if already existed.
+ */
+export function initializeAgentWorkspace(context: vscode.ExtensionContext, installDir: string): boolean {
+    if (isAgentWorkspaceInitialized(installDir)) { return false; }
+    ensureAgentGuide(context);
+    return true;
+}
+
+/**
  * Deploys agent docs, schemas, and the top-level guide into the install dir.
  * New agent docs are added by placing files in agent-docs/comfyai/ — no code
  * changes required (the recursive copy handles them automatically).

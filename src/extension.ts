@@ -20,7 +20,6 @@ export function activate(context: vscode.ExtensionContext) {
 	const statusBar = createStatusBar();
 	context.subscriptions.push(statusBar);
 
-	ensureAgentGuide(context);
 	ensureGitignore(context);
 	registerContributionCommands(context);
 
@@ -215,6 +214,25 @@ export function activate(context: vscode.ExtensionContext) {
 				);
 			} catch (e: any) {
 				vscode.window.showErrorMessage(`Failed to install integration node: ${e?.message ?? e}`);
+			}
+		})
+	);
+
+	// Agent workspace initialization command
+	context.subscriptions.push(
+		vscode.commands.registerCommand('comfyui.installWorkspace', async () => {
+			const config = vscode.workspace.getConfiguration('comfyui');
+			const rawInstallDir = config.get<string>('installDir', 'comfyui-workspace');
+			const installDir = resolveInstallDir(
+				rawInstallDir,
+				vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+				process.env.HOME
+			);
+			try {
+				ensureAgentGuide(context);
+				vscode.window.showInformationMessage('ComfyUI agent workspace installed/updated.');
+			} catch (e: any) {
+				vscode.window.showErrorMessage(`Failed to install agent workspace: ${e?.message ?? e}`);
 			}
 		})
 	);

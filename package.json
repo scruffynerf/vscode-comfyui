@@ -65,6 +65,11 @@
         "category": "ComfyUI"
       },
       {
+        "command": "comfyui.installWorkspace",
+        "title": "Install Agent Workspace",
+        "category": "ComfyUI"
+      },
+      {
         "command": "comfyui.refreshNodeCatalog",
         "title": "Refresh Node Catalog",
         "category": "ComfyUI"
@@ -130,7 +135,7 @@
         },
         "comfyui.gitRepo": {
           "type": "string",
-          "default": "https://github.com/hiddenswitch/ComfyUI.git",
+          "default": "https://github.com/hiddenswitch/pip-and-uv-installable-ComfyUI.git",
           "description": "The Git repository URL to use for development ComfyUI installations."
         },
         "comfyui.venvDir": {

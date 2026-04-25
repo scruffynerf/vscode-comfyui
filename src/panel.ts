@@ -7,6 +7,61 @@ import { setStatus, resetStatus } from './statusBar';
 import { formatWorkflowSummary } from './workflowAnalyzer';
 import { updateNodeCatalog } from './nodeCatalog';
 
+async function handleDownload(message: { filename: string; subfolder?: string; type?: string }, serverUrl: string): Promise<void> {
+    const params = new URLSearchParams();
+    params.set('filename', message.filename);
+    if (message.subfolder) { params.set('subfolder', message.subfolder); }
+    if (message.type) { params.set('type', message.type); }
+    
+    const url = `${serverUrl}/view?${params.toString()}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            vscode.window.showErrorMessage(`Failed to download: ${response.statusText}`);
+            return;
+        }
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const defaultPath = message.filename;
+        const saveUri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.file(defaultPath),
+            filters: { 'Images': ['png', 'jpg', 'jpeg', 'webp', 'gif'] }
+        });
+
+        if (saveUri) {
+            fs.writeFileSync(saveUri.fsPath, buffer);
+            vscode.window.showInformationMessage(`Saved: ${saveUri.fsPath}`);
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Download failed: ${(err as Error).message}`);
+    }
+}
+
+async function handleCopyImage(message: { imageData: string }, serverUrl: string): Promise<void> {
+    try {
+        // VS Code clipboard API only supports text, not images
+        // Save to temp file and open it so user can copy from there
+        const base64Data = message.imageData.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        const config = vscode.workspace.getConfiguration('comfyui');
+        const installDir = getInstallDir(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '');
+        const tempDir = path.join(installDir, 'output');
+        fs.mkdirSync(tempDir, { recursive: true });
+        
+        const tempFile = path.join(tempDir, `clipboard_${Date.now()}.png`);
+        fs.writeFileSync(tempFile, imageBuffer);
+        
+        // Open the file with system default - user can copy from there
+        await vscode.env.openExternal(vscode.Uri.file(tempFile));
+        vscode.window.showInformationMessage(`Image saved to ${tempFile}. Use your system image viewer to copy to clipboard.`);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Copy failed: ${(err as Error).message}`);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // ComfyStateProvider — virtual document + filesystem sync
 // ---------------------------------------------------------------------------
@@ -136,6 +191,14 @@ export class ComfyUIPanel {
                             ComfyUIPanel.triggerCatalogUpdate();
                         }
                     }
+                } else if (message.command === 'download') {
+                    const config = vscode.workspace.getConfiguration('comfyui');
+                    const serverUrl = config.get<string>('serverUrl', 'http://localhost:8188');
+                    handleDownload(message, serverUrl);
+                } else if (message.command === 'copyImage') {
+                    const config = vscode.workspace.getConfiguration('comfyui');
+                    const serverUrl = config.get<string>('serverUrl', 'http://localhost:8188');
+                    handleCopyImage(message, serverUrl);
                 }
             },
             null,
@@ -243,12 +306,67 @@ export class ComfyUIPanel {
                     const vscode = acquireVsCodeApi();
                     let bridgeConnected = false;
 
+                    // Intercept clicks on download links (Save Image)
+                    function interceptDownloads() {
+                        document.addEventListener('click', function(e) {
+                            const target = e.target;
+                            // Check if it's a download link or image link
+                            const isDownloadLink = target.tagName === 'A' && (target.hasAttribute('download') || target.href?.includes('/view?'));
+                            const isImageLink = target.tagName === 'IMG' && target.closest('a');
+                            
+                            if (isDownloadLink) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const url = target.href;
+                                if (url) {
+                                    const urlObj = new URL(url);
+                                    const params = urlObj.searchParams;
+                                    vscode.postMessage({
+                                        command: 'download',
+                                        filename: params.get('filename') || '',
+                                        subfolder: params.get('subfolder') || '',
+                                        type: params.get('type') || ''
+                                    });
+                                }
+                            }
+                        }, true);
+                    }
+
+                    // Intercept copy image commands from context menu
+                    function interceptCopyImage() {
+                        // Listen for the copy event that ComfyUI triggers
+                        document.addEventListener('copy', async function(e) {
+                            const selection = window.getSelection();
+                            if (selection && selection.rangeCount > 0) {
+                                const range = selection.getRangeAt(0);
+                                const container = range.commonAncestorContainer;
+                                const imgElement = container.nodeType === 1 
+                                    ? container.querySelector?.('img') 
+                                    : container.parentElement?.querySelector?.('img');
+                                
+                                if (imgElement && imgElement.src && imgElement.src.startsWith('data:image')) {
+                                    e.preventDefault();
+                                    vscode.postMessage({
+                                        command: 'copyImage',
+                                        imageData: imgElement.src
+                                    });
+                                }
+                            }
+                        }, true);
+                    }
+
                     // Relay iframe → VS Code
                     window.addEventListener('message', event => {
                         if (event.data && event.data.command === 'comfyStateUpdate') {
                             bridgeConnected = true;
                             vscode.postMessage(event.data);
                         }
+                    });
+
+                    // Also capture download links after iframe loads
+                    window.addEventListener('load', function() {
+                        setTimeout(interceptDownloads, 2000);
+                        setTimeout(interceptCopyImage, 2000);
                     });
 
                     // Relay VS Code → iframe

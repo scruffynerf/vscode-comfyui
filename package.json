@@ -2,7 +2,7 @@
   "name": "vscode-comfyui",
   "displayName": "VS Code ComfyUI",
   "description": "ComfyUI rendered for your code editor",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "publisher": "scruffynerf",
   "repository": {
     "type": "git",

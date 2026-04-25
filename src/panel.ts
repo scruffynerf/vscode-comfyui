@@ -7,6 +7,116 @@ import { setStatus, resetStatus } from './statusBar';
 import { formatWorkflowSummary } from './workflowAnalyzer';
 import { updateNodeCatalog } from './nodeCatalog';
 
+async function handleDownload(message: { filename: string; subfolder?: string; type?: string }): Promise<void> {
+    const config = vscode.workspace.getConfiguration('comfyui');
+    const serverUrl = config.get<string>('serverUrl', 'http://localhost:8188');
+    
+    const params = new URLSearchParams();
+    if (message.filename) { params.set('filename', message.filename); }
+    if (message.subfolder) { params.set('subfolder', message.subfolder); }
+    if (message.type) { params.set('type', message.type); }
+    
+    const url = `${serverUrl}/view?${params.toString()}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            vscode.window.showErrorMessage(`Failed to download: ${response.statusText}`);
+            return;
+        }
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const defaultPath = message.filename || 'image.png';
+        const saveUri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.file(defaultPath),
+            filters: { 'Images': ['png', 'jpg', 'jpeg', 'webp', 'gif'] }
+        });
+
+        if (saveUri) {
+            fs.writeFileSync(saveUri.fsPath, buffer);
+            vscode.window.showInformationMessage(`Saved: ${saveUri.fsPath}`);
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Download failed: ${(err as Error).message}`);
+    }
+}
+
+async function handleDownloadDataUrl(message: { dataUrl: string; filename: string }): Promise<void> {
+    try {
+        const base64Data = message.dataUrl.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        const saveUri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.file(message.filename || 'image.png'),
+            filters: { 'Images': ['png', 'jpg', 'jpeg', 'webp', 'gif'] }
+        });
+
+        if (saveUri) {
+            fs.writeFileSync(saveUri.fsPath, imageBuffer);
+            vscode.window.showInformationMessage(`Saved: ${saveUri.fsPath}`);
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Save failed: ${(err as Error).message}`);
+    }
+}
+
+async function handleCopyImageDataUrl(message: { dataUrl: string }): Promise<void> {
+    try {
+        const base64Data = message.dataUrl.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        const installDir = getInstallDir(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '');
+        const tempDir = path.join(installDir, 'output');
+        fs.mkdirSync(tempDir, { recursive: true });
+        
+        const tempFile = path.join(tempDir, `clipboard_${Date.now()}.png`);
+        fs.writeFileSync(tempFile, imageBuffer);
+        
+        await vscode.env.openExternal(vscode.Uri.file(tempFile));
+        vscode.window.showInformationMessage(`Image saved to ${tempFile}. Use your system image viewer to copy to clipboard.`);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Copy failed: ${(err as Error).message}`);
+    }
+}
+
+async function handleCopyImage(message: { imageData: string }): Promise<void> {
+    try {
+        // VS Code clipboard API only supports text, not images
+        // Save to temp file and open it so user can copy from there
+        const base64Data = message.imageData.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        const installDir = getInstallDir(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '');
+        const tempDir = path.join(installDir, 'output');
+        fs.mkdirSync(tempDir, { recursive: true });
+        
+        const tempFile = path.join(tempDir, `clipboard_${Date.now()}.png`);
+        fs.writeFileSync(tempFile, imageBuffer);
+        
+        await vscode.env.openExternal(vscode.Uri.file(tempFile));
+        vscode.window.showInformationMessage(`Image saved to ${tempFile}. Use your system image viewer to copy to clipboard.`);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Copy failed: ${(err as Error).message}`);
+    }
+}
+
+async function handleExportApi(message: { workflow: object }): Promise<void> {
+    try {
+        const saveUri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.file('workflow_api.json'),
+            filters: { 'JSON': ['json'] }
+        });
+
+        if (saveUri) {
+            fs.writeFileSync(saveUri.fsPath, JSON.stringify(message.workflow, null, 2), 'utf-8');
+            vscode.window.showInformationMessage(`Exported: ${saveUri.fsPath}`);
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Export failed: ${(err as Error).message}`);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // ComfyStateProvider — virtual document + filesystem sync
 // ---------------------------------------------------------------------------
@@ -136,6 +246,16 @@ export class ComfyUIPanel {
                             ComfyUIPanel.triggerCatalogUpdate();
                         }
                     }
+                } else if (message.command === 'download') {
+                    handleDownload(message);
+                } else if (message.command === 'copyImage') {
+                    handleCopyImage(message);
+                } else if (message.command === 'exportApi') {
+                    handleExportApi(message);
+                } else if (message.command === 'downloadDataUrl') {
+                    handleDownloadDataUrl(message);
+                } else if (message.command === 'copyImageDataUrl') {
+                    handleCopyImageDataUrl(message);
                 }
             },
             null,
@@ -259,6 +379,13 @@ export class ComfyUIPanel {
                             if (iframe && iframe.contentWindow) {
                                 iframe.contentWindow.postMessage(event.data, '*');
                             }
+                        }
+                    });
+
+                    // Relay iframe → VS Code (for custom node menu actions)
+                    window.addEventListener('message', event => {
+                        if (event.data && (event.data.command === 'download' || event.data.command === 'copyImage' || event.data.command === 'exportApi' || event.data.command === 'downloadDataUrl' || event.data.command === 'copyImageDataUrl')) {
+                            vscode.postMessage(event.data);
                         }
                     });
 

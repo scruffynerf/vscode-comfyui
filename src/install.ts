@@ -117,6 +117,99 @@ app.registerExtension({
     async setup() {
         console.log("[VSCode Bridge] Initializing two-way integration...");
 
+        app.registerExtension({
+            name: "vscode.integration.menus",
+            getNodeMenuItems: function(node) {
+                if (!node) { return []; }
+                var items = [];
+                var nodeClass = node.comfyClass;
+                if (nodeClass === "SaveImage" || nodeClass === "PreviewImage" || nodeClass === "VHS_VideoCombine") {
+                    
+                    items.push({
+                        content: "Save Image (VS Code)",
+                        callback: function() { 
+                            console.log("[VSCode Bridge] Save menu clicked");
+                            
+                            // Use node.imgs (preview images) - same as native ComfyUI menu
+                            if (node.imgs && node.imgs.length > 0) {
+                                var img = node.imgs[node.imageIndex || 0] || node.imgs[0];
+                                if (img) {
+                                    // Draw to canvas and get as data URL (same as native)
+                                    var canvas = document.createElement("canvas");
+                                    canvas.width = img.naturalWidth;
+                                    canvas.height = img.naturalHeight;
+                                    var ctx = canvas.getContext("2d");
+                                    ctx.drawImage(img, 0, 0);
+                                    var dataUrl = canvas.toDataURL("image/png");
+                                    window.parent.postMessage({
+                                        command: "downloadDataUrl",
+                                        dataUrl: dataUrl,
+                                        filename: (node.widgets && node.widgets[0] && node.widgets[0].value) || "image.png"
+                                    }, "*");
+                                    return;
+                                }
+                            }
+                            console.log("[VSCode Bridge] No imgs found on node");
+                        }
+                    });
+                    
+                    items.push({
+                        content: "Copy Image (VS Code)",
+                        callback: function() {
+                            console.log("[VSCode Bridge] Copy menu clicked");
+                            
+                            // Use node.imgs (preview images)
+                            if (node.imgs && node.imgs.length > 0) {
+                                var img = node.imgs[node.imageIndex || 0] || node.imgs[0];
+                                if (img) {
+                                    var canvas = document.createElement("canvas");
+                                    canvas.width = img.naturalWidth;
+                                    canvas.height = img.naturalHeight;
+                                    var ctx = canvas.getContext("2d");
+                                    ctx.drawImage(img, 0, 0);
+                                    var dataUrl = canvas.toDataURL("image/png");
+                                    window.parent.postMessage({
+                                        command: "copyImageDataUrl",
+                                        dataUrl: dataUrl
+                                    }, "*");
+                                    return;
+                                }
+                            }
+                            console.log("[VSCode Bridge] No imgs found on node");
+                        }
+                    });
+                }
+                return items;
+            },
+            getCanvasMenuItems: function(canvas) {
+                return [{
+                    content: "Export Workflow (API) (VS Code)",
+                    callback: function() {
+                        console.log("[VSCode Bridge] Export menu clicked");
+                        var workflow = app.graph.serialize();
+                        var apiWorkflow = {};
+                        for (var i = 0; i < workflow.nodes.length; i++) {
+                            var node = workflow.nodes[i];
+                            var inputs = {};
+                            var inputKeys = Object.keys(node.inputs || {});
+                            for (var j = 0; j < inputKeys.length; j++) {
+                                var key = inputKeys[j];
+                                inputs[key] = node.inputs[key];
+                            }
+                            apiWorkflow[node.id.toString()] = {
+                                class_type: node.type,
+                                inputs: inputs
+                            };
+                        }
+                        window.parent.postMessage({
+                            command: "exportApi",
+                            workflow: apiWorkflow
+                        }, "*");
+                    }
+                }];
+            }
+        });
+
         window.addEventListener("message", async (event) => {
             const cmd = event.data && event.data.command;
 

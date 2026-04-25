@@ -2,6 +2,21 @@
 
 All notable changes to the "VS Code ComfyUI" extension will be documented in this file.
 
+## [2.2.2] - 2026-04-25
+
+### Bug fixes
+
+- **Save Image, Copy Image, and Export (API) in embedded panel**: The VS Code webview environment doesn't support browser-native download and clipboard APIs the same way a regular browser does. Added VS Code-friendly context menu items via the custom integration node:
+  - Right-click on **SaveImage/PreviewImage** nodes → "Save Image (VS Code)" uses canvas dataURL to save directly via VS Code dialog
+  - Right-click on **SaveImage/PreviewImage** nodes → "Copy Image (VS Code)" opens image in system viewer (VS Code clipboard doesn't support images)
+  - Right-click on **canvas** → "Export Workflow (API) (VS Code)" opens VS Code save dialog for JSON export
+  - Uses `node.imgs` (same as native ComfyUI) to get the actual image data
+
+### Known limitations
+
+- Paste into the panel works normally (handled by ComfyUI inside the iframe)
+- Copy Image opens system viewer instead of true clipboard copy (VS Code API limitation)
+
 ## [2.2.1] - 2026-04-25
 
 ### Bug fixes

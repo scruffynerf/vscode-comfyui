@@ -319,6 +319,11 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
 
                 if (signalData && signalData.command === 'queue') {
                     // QUEUE MODE — forward to the ComfyUI panel (bridge node calls app.queuePrompt)
+                    if (ComfyUIPanel.currentPanel && !ComfyUIPanel.currentPanel.isBridgeConnected()) {
+                        writeApplyResponse(installDir, 'error', 'ComfyUI panel is open but its in-canvas bridge is not connected — nothing was queued. Reload the panel (Ctrl+Shift+R) and retry.', triggerTs, signalData.notes);
+                        resetStatus();
+                        return;
+                    }
                     if (ComfyUIPanel.currentPanel) {
                         const count = (typeof signalData.count === 'number' && signalData.count >= 1)
                             ? Math.floor(signalData.count) : 1;
@@ -381,7 +386,16 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     const timeout = cfg.get<number>('serverTimeout', 60000);
                     setStatus('$(sync~spin) ComfyUI: Restarting server...');
                     try {
-                        await fetch(`${serverUrl}${endpoint}`, { method: 'GET' });
+                        // ComfyUI-Manager registers this route POST-only; a GET always 404s.
+                        const rebootResp = await fetch(`${serverUrl}${endpoint}`, { method: 'POST' });
+                        if (!rebootResp.ok) {
+                            const hint = (rebootResp.status === 404 || rebootResp.status === 405)
+                                ? ` — ${endpoint} is not registered. Is ComfyUI-Manager installed and the server started with --enable-manager?`
+                                : '';
+                            writeApplyResponse(installDir, 'error', `restart-server: HTTP ${rebootResp.status}${hint}`, triggerTs, signalData.notes);
+                            resetStatus();
+                            return;
+                        }
                     } catch (err: any) {
                         // Connection drop on restart is expected — treat as success and fall through
                         const isExpectedDrop = err instanceof TypeError &&
@@ -389,9 +403,13 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                              err.message.includes('ECONNREFUSED') || err.message.includes('socket hang up'));
                         if (!isExpectedDrop) {
                             writeApplyResponse(installDir, 'error', `restart-server: fetch error: ${err.message}`, triggerTs, signalData.notes);
-                        resetStatus();
-                        return;
+                            resetStatus();
+                            return;
+                        }
                     }
+                    // Post-reboot recovery. Reached whether or not the request threw: a dropped
+                    // connection is the normal success signal, but a plain HTTP response must
+                    // not skip this path either.
                     const becameResponsive = await waitForServer(serverUrl, 1000, timeout);
                     if (!becameResponsive) {
                         writeApplyResponse(installDir, 'error', 'restart-server: server did not become responsive before timeout', triggerTs, signalData.notes);
@@ -399,8 +417,9 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                         return;
                     }
                     // Reload panel and refresh catalog now that server is back
+                    let panelBackUp = true;
                     if (ComfyUIPanel.currentPanel) {
-                        ComfyUIPanel.currentPanel.reload();
+                        panelBackUp = await ComfyUIPanel.currentPanel.reload();
                     }
                     const workspaceFolders = vscode.workspace.workspaceFolders;
                     if (workspaceFolders) {
@@ -409,7 +428,11 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                             await updateNodeCatalog(serverUrl, getInstallDir(rootPath));
                         } catch { /* catalog update is best-effort */ }
                     }
-                    writeApplyResponse(installDir, 'ok', 'Server restarted and responsive — panel reloaded, catalog refreshed', triggerTs, signalData.notes);
+                    if (panelBackUp) {
+                        writeApplyResponse(installDir, 'ok', 'Server restarted and responsive — panel reloaded, bridge connected, catalog refreshed', triggerTs, signalData.notes);
+                    } else {
+                        writeApplyResponse(installDir, 'error', 'Server restarted and catalog refreshed, but the panel bridge never reconnected — patches would silently do nothing. Reopen the panel (Ctrl+Shift+R).', triggerTs, signalData.notes);
+                    }
                     setStatus('$(check) ComfyUI: Server restarted');
                     setTimeout(resetStatus, 3000);
                     return;
@@ -447,11 +470,26 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                 }
 
                 if (signalData && signalData.command === 'open-panel') {
-                    // OPEN PANEL — create or reload the ComfyUI panel.
-                    // Use after a server restart if the panel did not reload automatically.
+                    // OPEN PANEL — create or reload the ComfyUI panel, then confirm the
+                    // in-canvas bridge actually came back. Reporting success on the strength
+                    // of having issued the command is how a dead bridge went unnoticed until
+                    // the next patch silently vanished.
                     saveHistory(installDir, triggerTs, null, null, signalData.notes ?? 'open-panel');
-                    vscode.commands.executeCommand('comfyui.openReloadEditor');
-                    writeApplyResponse(installDir, 'ok', 'Panel opened/reloaded', triggerTs, signalData.notes);
+                    setStatus('$(sync~spin) ComfyUI: Reloading panel...');
+                    let panelOk = false;
+                    if (ComfyUIPanel.currentPanel) {
+                        panelOk = await ComfyUIPanel.currentPanel.reload();
+                    } else {
+                        vscode.commands.executeCommand('comfyui.openReloadEditor');
+                        panelOk = ComfyUIPanel.currentPanel
+                            ? await (ComfyUIPanel.currentPanel as ComfyUIPanel).waitForBridge(20000)
+                            : false;
+                    }
+                    if (panelOk) {
+                        writeApplyResponse(installDir, 'ok', 'Panel opened/reloaded — bridge connected', triggerTs, signalData.notes);
+                    } else {
+                        writeApplyResponse(installDir, 'error', 'Panel was reloaded but its in-canvas bridge never connected — patches would silently do nothing. Close and reopen the panel (Ctrl+Shift+R), and check the ComfyUI server is reachable.', triggerTs, signalData.notes);
+                    }
                     resetStatus();
                     return;
                 }
@@ -553,15 +591,30 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                             }
                         }
 
-                        ComfyUIPanel.currentPanel.applyPatch(patchData);
-                        const addedNodes = patchData.nodes?.length ?? 0;
-                        const addedLinks = patchData.links?.length ?? 0;
-                        const rmNodes = patchData.remove_nodes?.length ?? 0;
-                        const rmLinks = patchData.remove_links?.length ?? 0;
-                        const summary = `Patch applied: ${addedNodes} node(s), ${addedLinks} link(s)` +
-                            (rmNodes > 0 || rmLinks > 0 ? `; removed: ${rmNodes} node(s), ${rmLinks} link(s)` : '');
-                        const msg = typeWarnings.length > 0 ? `${summary}. WARNING: ${typeWarnings.join('; ')}` : summary;
-                        writeApplyResponse(installDir, typeWarnings.length > 0 ? 'error' : 'ok', msg, triggerTs, signalData.notes);
+                        // Wait for the canvas to report what it actually did. Counting entries
+                        // in the patch file only describes what was *asked for*, so an
+                        // unreachable bridge, an unknown node ID and a clean apply all used to
+                        // produce the same cheerful "ok".
+                        let report;
+                        try {
+                            report = await ComfyUIPanel.currentPanel.applyPatch(patchData);
+                        } catch (err: any) {
+                            writeApplyResponse(installDir, 'error', `Patch NOT applied — ${err.message}`, triggerTs, signalData.notes);
+                            setStatus('$(error) ComfyUI: Patch failed');
+                            setTimeout(resetStatus, 3000);
+                            return;
+                        }
+                        const applied = report?.applied ?? [];
+                        const bridgeErrors = report?.errors ?? [];
+                        const changes = applied
+                            .map(a => `${a.id !== undefined ? `node ${a.id}` : `link ${a.link}`} [${a.graph}] ${(a.changed ?? []).join('/')}`)
+                            .join('; ');
+                        const summary = `Patch applied: ${applied.length} change(s)${changes ? ` — ${changes}` : ''}`;
+                        const problems = [...bridgeErrors, ...typeWarnings];
+                        const msg = problems.length > 0
+                            ? `${summary}. ${problems.length} problem(s): ${problems.join('; ')}`
+                            : summary;
+                        writeApplyResponse(installDir, problems.length > 0 ? 'error' : 'ok', msg, triggerTs, signalData.notes);
                     } else {
                         // Full workflow mode (sourcePath): intentional full replacement.
                         ComfyUIPanel.currentPanel.updateComfyState(workflowData);
@@ -569,8 +622,10 @@ export function watchApplyFile(context: vscode.ExtensionContext): vscode.Disposa
                     }
                 } else if (workflowData && !ComfyUIPanel.currentPanel) {
                     writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again', triggerTs, signalData.notes);
-                }
-                    writeApplyResponse(installDir, 'error', 'ComfyUI panel is not open — open the panel and try again', triggerTs, signalData.notes);
+                } else {
+                    // Neither a patch nor a workflow nor a recognised command. Previously this
+                    // fell through writing nothing at all, so the trigger vanished in silence.
+                    writeApplyResponse(installDir, 'error', 'Trigger had no patchPath, sourcePath, or recognized command — nothing to apply', triggerTs, signalData?.notes);
                 }
                 resetStatus();
             } catch (err) {

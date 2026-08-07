@@ -212,10 +212,25 @@ async function writeServerInfo(serverUrl: string, installDir: string, config: vs
 // ComfyUIPanel — embedded webview
 // ---------------------------------------------------------------------------
 
+interface PatchReport {
+    ts: number;
+    applied: { id?: number; link?: string | number; graph: string; changed: string[] }[];
+    errors: string[];
+}
+
 export class ComfyUIPanel {
     public static currentPanel: ComfyUIPanel | undefined;
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
+
+    // Whether the in-canvas bridge has actually spoken to us. The panel object
+    // outlives a webview reload, so its mere existence says nothing about whether
+    // anything we post will be received — which is how patches came to be reported
+    // as applied when the canvas never got them.
+    private _bridgeConnected = false;
+    private _bridgeWaiters: { resolve: (ok: boolean) => void; timer: NodeJS.Timeout }[] = [];
+    private _pendingPatches = new Map<string, { resolve: (r: PatchReport) => void; timer: NodeJS.Timeout }>();
+    private _reqSeq = 0;
 
     private constructor(panel: vscode.WebviewPanel, _extensionUri: vscode.Uri) {
         this._panel = panel;
@@ -232,6 +247,21 @@ export class ComfyUIPanel {
 
         this._panel.webview.onDidReceiveMessage(
             (message) => {
+                if (message.command === 'bridgeReady' || message.command === 'comfyStateUpdate' || message.command === 'applyPatchResult') {
+                    this._markBridgeConnected();
+                }
+                if (message.command === 'applyPatchResult') {
+                    const pending = this._pendingPatches.get(message.requestId);
+                    if (pending) {
+                        this._pendingPatches.delete(message.requestId);
+                        clearTimeout(pending.timer);
+                        pending.resolve(message.report as PatchReport);
+                    }
+                    return;
+                }
+                if (message.command === 'bridgeReady') {
+                    return;
+                }
                 if (message.command === 'comfyStateUpdate') {
                     stateProvider.update(message.workflowData);
                     // If the catalog update failed at panel-open time (server wasn't ready),
@@ -310,21 +340,80 @@ export class ComfyUIPanel {
         });
     }
 
-    public reload() {
-        const content = this._getWebviewContent();
-        this._panel.webview.html = '';
-        setTimeout(() => {
-            this._panel.webview.html = content;
-        }, 100);
+    private _markBridgeConnected() {
+        this._bridgeConnected = true;
+        const waiters = this._bridgeWaiters;
+        this._bridgeWaiters = [];
+        for (const w of waiters) {
+            clearTimeout(w.timer);
+            w.resolve(true);
+        }
+    }
+
+    /** True once the in-canvas bridge has reported in since the last (re)load. */
+    public isBridgeConnected(): boolean {
+        return this._bridgeConnected;
+    }
+
+    /** Resolves true when the bridge reports in, false on timeout. */
+    public waitForBridge(timeoutMs = 15000): Promise<boolean> {
+        if (this._bridgeConnected) { return Promise.resolve(true); }
+        return new Promise<boolean>((resolve) => {
+            const waiter = { resolve, timer: undefined as unknown as NodeJS.Timeout };
+            waiter.timer = setTimeout(() => {
+                this._bridgeWaiters = this._bridgeWaiters.filter(w => w !== waiter);
+                resolve(false);
+            }, timeoutMs);
+            this._bridgeWaiters.push(waiter);
+        });
+    }
+
+    /**
+     * Rebuild the webview and confirm the bridge came back.
+     *
+     * Blanking the HTML and restoring it does not reliably bring the bridge up on
+     * the first attempt, and the old fire-and-forget version reported success
+     * regardless — leaving a panel that looked healthy while silently discarding
+     * every patch. Verify, retry once, and tell the caller what actually happened.
+     */
+    public async reload(timeoutMs = 20000): Promise<boolean> {
+        const settle = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+        for (let attempt = 1; attempt <= 2; attempt++) {
+            this._bridgeConnected = false;
+            this._panel.webview.html = '';
+            await settle(attempt === 1 ? 150 : 400);
+            this._panel.webview.html = this._getWebviewContent();
+            if (await this.waitForBridge(timeoutMs)) { return true; }
+            console.warn(`[ComfyUI] Panel reload attempt ${attempt} did not bring the bridge up`);
+        }
+        return false;
     }
 
     public updateComfyState(workflowData: any) {
         this._panel.webview.postMessage({ command: 'updateComfyState', workflowData });
     }
 
-    /** Apply a partial patch in-place (avoids loadGraphData / new-tab creation). */
-    public applyPatch(patch: any) {
-        this._panel.webview.postMessage({ command: 'applyPatch', patch });
+    /**
+     * Apply a partial patch in-place (avoids loadGraphData / new-tab creation).
+     *
+     * Resolves with the bridge's own per-node report, or rejects if the canvas never
+     * acknowledges. postMessage into a webview whose iframe is gone succeeds silently,
+     * so an explicit ack is the only way to tell "applied" from "went nowhere".
+     */
+    public applyPatch(patch: any, timeoutMs = 8000): Promise<PatchReport> {
+        const requestId = `p${++this._reqSeq}`;
+        return new Promise<PatchReport>((resolve, reject) => {
+            const timer = setTimeout(() => {
+                this._pendingPatches.delete(requestId);
+                this._bridgeConnected = false;
+                reject(new Error(
+                    'the ComfyUI panel is open but its in-canvas bridge did not acknowledge the patch — ' +
+                    'reload the panel (Ctrl+Shift+R) and retry'
+                ));
+            }, timeoutMs);
+            this._pendingPatches.set(requestId, { resolve, timer });
+            this._panel.webview.postMessage({ command: 'applyPatch', patch, requestId });
+        });
     }
 
     public queueWorkflow() {
@@ -363,9 +452,12 @@ export class ComfyUIPanel {
                     const vscode = acquireVsCodeApi();
                     let bridgeConnected = false;
 
-                    // Relay iframe → VS Code
+                    // Relay iframe → VS Code. bridgeReady is a liveness heartbeat and
+                    // applyPatchResult is the per-request ack; without relaying both, the
+                    // extension host cannot tell a live canvas from a dead one.
                     window.addEventListener('message', event => {
-                        if (event.data && event.data.command === 'comfyStateUpdate') {
+                        const c = event.data && event.data.command;
+                        if (c === 'comfyStateUpdate' || c === 'bridgeReady' || c === 'applyPatchResult') {
                             bridgeConnected = true;
                             vscode.postMessage(event.data);
                         }

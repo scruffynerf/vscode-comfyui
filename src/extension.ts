@@ -130,7 +130,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			try {
 				vscode.window.showInformationMessage('Restarting ComfyUI Server...');
-				const response = await fetch(`${url}${endpoint}`, { method: 'GET' });
+				const response = await fetch(`${url}${endpoint}`, { method: 'POST' });   // ComfyUI-Manager registers this route POST-only; GET always 404s
 
 				if (response.ok) {
 					vscode.window.showInformationMessage('Server restart triggered. Waiting for server to become responsive...');
@@ -145,7 +145,10 @@ export function activate(context: vscode.ExtensionContext) {
 						);
 					}
 				} else {
-					vscode.window.showErrorMessage(`Failed to restart server: ${response.statusText}`);
+					const hint = (response.status === 404 || response.status === 405)
+						? ` — ${endpoint} is not registered. Is ComfyUI-Manager installed and the server started with --enable-manager?`
+						: '';
+					vscode.window.showErrorMessage(`Failed to restart server: ${response.status} ${response.statusText}${hint}`);
 				}
 			} catch (error: any) {
 				// When the server restarts it drops the connection — treat connection errors as success.

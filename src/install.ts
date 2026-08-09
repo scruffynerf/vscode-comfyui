@@ -117,98 +117,246 @@ app.registerExtension({
     async setup() {
         console.log("[VSCode Bridge] Initializing two-way integration...");
 
-        app.registerExtension({
-            name: "vscode.integration.menus",
-            getNodeMenuItems: function(node) {
-                if (!node) { return []; }
-                var items = [];
-                var nodeClass = node.comfyClass;
-                if (nodeClass === "SaveImage" || nodeClass === "PreviewImage" || nodeClass === "VHS_VideoCombine") {
-                    
-                    items.push({
-                        content: "Save Image (VS Code)",
-                        callback: function() { 
-                            console.log("[VSCode Bridge] Save menu clicked");
-                            
-                            // Use node.imgs (preview images) - same as native ComfyUI menu
-                            if (node.imgs && node.imgs.length > 0) {
-                                var img = node.imgs[node.imageIndex || 0] || node.imgs[0];
-                                if (img) {
-                                    // Draw to canvas and get as data URL (same as native)
-                                    var canvas = document.createElement("canvas");
-                                    canvas.width = img.naturalWidth;
-                                    canvas.height = img.naturalHeight;
-                                    var ctx = canvas.getContext("2d");
-                                    ctx.drawImage(img, 0, 0);
-                                    var dataUrl = canvas.toDataURL("image/png");
-                                    window.parent.postMessage({
-                                        command: "downloadDataUrl",
-                                        dataUrl: dataUrl,
-                                        filename: (node.widgets && node.widgets[0] && node.widgets[0].value) || "image.png"
-                                    }, "*");
-                                    return;
-                                }
-                            }
-                            console.log("[VSCode Bridge] No imgs found on node");
-                        }
-                    });
-                    
-                    items.push({
-                        content: "Copy Image (VS Code)",
-                        callback: function() {
-                            console.log("[VSCode Bridge] Copy menu clicked");
-                            
-                            // Use node.imgs (preview images)
-                            if (node.imgs && node.imgs.length > 0) {
-                                var img = node.imgs[node.imageIndex || 0] || node.imgs[0];
-                                if (img) {
-                                    var canvas = document.createElement("canvas");
-                                    canvas.width = img.naturalWidth;
-                                    canvas.height = img.naturalHeight;
-                                    var ctx = canvas.getContext("2d");
-                                    ctx.drawImage(img, 0, 0);
-                                    var dataUrl = canvas.toDataURL("image/png");
-                                    window.parent.postMessage({
-                                        command: "copyImageDataUrl",
-                                        dataUrl: dataUrl
-                                    }, "*");
-                                    return;
-                                }
-                            }
-                            console.log("[VSCode Bridge] No imgs found on node");
-                        }
-                    });
+        // ------------------------------------------------------------------
+        // Graph traversal
+        //
+        // Since the subgraph rework, node IDs live in per-graph ID spaces: the
+        // root graph plus one graph per subgraph *definition*. LGraph.subgraphs
+        // is a Map<uuid, Subgraph> that always resolves to the root graph's, so
+        // [rootGraph, ...rootGraph.subgraphs.values()] is the full set — this is
+        // the same pattern litegraph itself uses internally.
+        //
+        // getNodeById() only searches the graph it is called on, which is why a
+        // patch aimed at a node inside a subgraph used to silently do nothing.
+        // ------------------------------------------------------------------
+        const rootGraph = () => (app.graph && app.graph.rootGraph) || app.graph;
+
+        const allGraphs = () => {
+            const root = rootGraph();
+            if (!root) { return []; }
+            const graphs = [root];
+            const subs = root.subgraphs;
+            if (subs && typeof subs.values === "function") {
+                for (const sg of subs.values()) {
+                    if (sg && sg !== root) { graphs.push(sg); }
                 }
-                return items;
-            },
-            getCanvasMenuItems: function(canvas) {
-                return [{
-                    content: "Export Workflow (API) (VS Code)",
-                    callback: function() {
-                        console.log("[VSCode Bridge] Export menu clicked");
-                        var workflow = app.graph.serialize();
-                        var apiWorkflow = {};
-                        for (var i = 0; i < workflow.nodes.length; i++) {
-                            var node = workflow.nodes[i];
-                            var inputs = {};
-                            var inputKeys = Object.keys(node.inputs || {});
-                            for (var j = 0; j < inputKeys.length; j++) {
-                                var key = inputKeys[j];
-                                inputs[key] = node.inputs[key];
-                            }
-                            apiWorkflow[node.id.toString()] = {
-                                class_type: node.type,
-                                inputs: inputs
-                            };
-                        }
-                        window.parent.postMessage({
-                            command: "exportApi",
-                            workflow: apiWorkflow
-                        }, "*");
-                    }
-                }];
             }
-        });
+            return graphs;
+        };
+
+        const graphLabel = (g) => {
+            if (g === rootGraph()) { return "root"; }
+            return g.name || (g.id != null ? String(g.id) : "subgraph");
+        };
+
+        // A patch node may carry \`subgraph\`: the subgraph's name or uuid, or the
+        // literal "root". Without it we search everywhere and require exactly one
+        // hit — ambiguity is reported rather than guessed at, because IDs are only
+        // unique within a graph.
+        const inScope = (g, scope) => {
+            if (scope == null) { return true; }
+            const s = String(scope);
+            if (g === rootGraph()) { return s === "root"; }
+            return String(g.id) === s || String(g.name) === s;
+        };
+
+        const findNodes = (id, scope) => {
+            const matches = [];
+            for (const g of allGraphs()) {
+                if (!inScope(g, scope)) { continue; }
+                let n = null;
+                try {
+                    if (typeof g.getNodeById === "function") { n = g.getNodeById(id); }
+                } catch (e) { n = null; }
+                if (!n && Array.isArray(g.nodes)) {
+                    n = g.nodes.find((x) => String(x.id) === String(id)) || null;
+                }
+                if (n) { matches.push({ node: n, graph: g }); }
+            }
+            return matches;
+        };
+
+        // Resolve to exactly one node, or explain why not. Every failure here is
+        // reported back — a patch that cannot be located must never look applied.
+        const resolveNode = (id, scope, report) => {
+            const matches = findNodes(id, scope);
+            if (matches.length === 1) { return matches[0]; }
+            if (matches.length === 0) {
+                const where = scope == null
+                    ? \`the root graph or any of \${allGraphs().length - 1} subgraph(s)\`
+                    : (String(scope) === "root" ? "the root graph" : \`subgraph "\${scope}"\`);
+                report.errors.push(\`node \${id}: not found in \${where}\`);
+            } else {
+                const where = matches.map((m) => graphLabel(m.graph)).join(", ");
+                report.errors.push(
+                    \`node \${id}: ambiguous — exists in \${matches.length} graphs (\${where}); \` +
+                    \`add "subgraph" to the patch node to disambiguate\`
+                );
+            }
+            return null;
+        };
+
+        // ------------------------------------------------------------------
+        // Patch application
+        // ------------------------------------------------------------------
+        const applyPatch = (patch) => {
+            const report = { ts: Date.now(), applied: [], errors: [] };
+            if (!patch || typeof patch !== "object") {
+                report.errors.push("patch was empty or not an object");
+                return report;
+            }
+
+            // Removals first — LiteGraph remove() disconnects attached links for us,
+            // so a patch can delete-and-replace in one step.
+            if (Array.isArray(patch.remove_nodes)) {
+                for (const entry of patch.remove_nodes) {
+                    const id = (entry && typeof entry === "object") ? entry.id : entry;
+                    const scope = (entry && typeof entry === "object") ? entry.subgraph : undefined;
+                    const found = resolveNode(id, scope, report);
+                    if (!found) { continue; }
+                    try {
+                        found.graph.remove(found.node);
+                        report.applied.push({ id, graph: graphLabel(found.graph), changed: ["removed"] });
+                    } catch (err) {
+                        report.errors.push(\`node \${id}: remove failed — \${err && err.message}\`);
+                    }
+                }
+            }
+
+            if (Array.isArray(patch.remove_links)) {
+                for (const id of patch.remove_links) {
+                    let removed = false;
+                    for (const g of allGraphs()) {
+                        try {
+                            if (g.links && typeof g.links.get === "function" ? g.links.get(id) : (g.links || {})[id]) {
+                                g.removeLink(id);
+                                removed = true;
+                                report.applied.push({ link: id, graph: graphLabel(g), changed: ["removed"] });
+                                break;
+                            }
+                        } catch (e) { /* try the next graph */ }
+                    }
+                    if (!removed) { report.errors.push(\`link \${id}: not found in any graph\`); }
+                }
+            }
+
+            // Update or add nodes
+            if (Array.isArray(patch.nodes)) {
+                for (const pNode of patch.nodes) {
+                    const id = pNode.id;
+                    let found = findNodes(id, pNode.subgraph);
+
+                    if (found.length > 1) {
+                        resolveNode(id, pNode.subgraph, report);   // records the ambiguity
+                        continue;
+                    }
+
+                    let node = found.length === 1 ? found[0].node : null;
+                    let graph = found.length === 1 ? found[0].graph : null;
+
+                    if (!node) {
+                        if (!pNode.type) {
+                            resolveNode(id, pNode.subgraph, report);   // records "not found"
+                            continue;
+                        }
+                        // New node — created in the scoped graph, or the root by default.
+                        graph = rootGraph();
+                        if (pNode.subgraph != null) {
+                            const target = allGraphs().find((g) => inScope(g, pNode.subgraph));
+                            if (!target) {
+                                report.errors.push(\`node \${id}: subgraph "\${pNode.subgraph}" not found\`);
+                                continue;
+                            }
+                            graph = target;
+                        }
+                        try {
+                            node = LiteGraph.createNode(pNode.type);
+                        } catch (err) {
+                            node = null;
+                        }
+                        if (!node) {
+                            report.errors.push(\`node \${id}: unknown node type "\${pNode.type}"\`);
+                            continue;
+                        }
+                        node.id = pNode.id;
+                        graph.add(node);
+                        // Keep the graph's ID counter ahead of what we just inserted,
+                        // otherwise the next user-added node reuses this ID.
+                        if (typeof graph.last_node_id === "number" && Number(pNode.id) > graph.last_node_id) {
+                            graph.last_node_id = Number(pNode.id);
+                        }
+                    }
+
+                    const changed = [];
+                    if (pNode.pos !== undefined) { node.pos[0] = pNode.pos[0]; node.pos[1] = pNode.pos[1]; changed.push("pos"); }
+                    if (pNode.size !== undefined) { node.size[0] = pNode.size[0]; node.size[1] = pNode.size[1]; changed.push("size"); }
+                    if (pNode.color !== undefined) { node.color = pNode.color; changed.push("color"); }
+                    if (pNode.bgcolor !== undefined) { node.bgcolor = pNode.bgcolor; changed.push("bgcolor"); }
+                    if (pNode.title !== undefined) { node.title = pNode.title; changed.push("title"); }
+
+                    if (pNode.widgets_values !== undefined) {
+                        if (!node.widgets || node.widgets.length === 0) {
+                            report.errors.push(\`node \${id}: patch sets widgets_values but the node has no widgets\`);
+                        } else {
+                            // Index by widget position, which is what serialize() writes
+                            // out — so a patch expressed against workflow-state.readonly.json
+                            // lines up with what the canvas reports back.
+                            const n = Math.min(pNode.widgets_values.length, node.widgets.length);
+                            if (pNode.widgets_values.length > node.widgets.length) {
+                                report.errors.push(
+                                    \`node \${id}: patch has \${pNode.widgets_values.length} widget value(s) \` +
+                                    \`but the node has \${node.widgets.length} — extra values ignored\`
+                                );
+                            }
+                            for (let i = 0; i < n; i++) { node.widgets[i].value = pNode.widgets_values[i]; }
+                            changed.push(\`widgets_values[0..\${n - 1}]\`);
+                        }
+                    }
+
+                    if (changed.length > 0) {
+                        report.applied.push({ id, graph: graphLabel(graph), changed });
+                    } else {
+                        report.errors.push(\`node \${id}: patch entry contained nothing to change\`);
+                    }
+                }
+            }
+
+            // Links: [link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]
+            // connect() takes a node *object* in this frontend, not an ID.
+            if (Array.isArray(patch.links)) {
+                for (const link of patch.links) {
+                    const [, srcNodeId, srcSlot, dstNodeId, dstSlot] = link;
+                    const scope = (link.length > 6 && link[6]) ? link[6] : undefined;
+                    const src = resolveNode(srcNodeId, scope, report);
+                    const dst = resolveNode(dstNodeId, scope, report);
+                    if (!src || !dst) { continue; }
+                    if (src.graph !== dst.graph) {
+                        report.errors.push(
+                            \`link \${srcNodeId}->\${dstNodeId}: endpoints live in different graphs \` +
+                            \`(\${graphLabel(src.graph)} vs \${graphLabel(dst.graph)}) — cannot connect across a subgraph boundary\`
+                        );
+                        continue;
+                    }
+                    try {
+                        const made = src.node.connect(srcSlot, dst.node, dstSlot);
+                        if (made) {
+                            report.applied.push({ link: \`\${srcNodeId}:\${srcSlot}->\${dstNodeId}:\${dstSlot}\`, graph: graphLabel(src.graph), changed: ["connected"] });
+                        } else {
+                            report.errors.push(\`link \${srcNodeId}:\${srcSlot}->\${dstNodeId}:\${dstSlot}: connect() refused (slot type mismatch or bad slot index)\`);
+                        }
+                    } catch (err) {
+                        report.errors.push(\`link \${srcNodeId}->\${dstNodeId}: \${err && err.message}\`);
+                    }
+                }
+            }
+
+            return report;
+        };
+
+        // ------------------------------------------------------------------
+        // Message handling
+        // ------------------------------------------------------------------
+        let lastPatchReport = null;
 
         window.addEventListener("message", async (event) => {
             const cmd = event.data && event.data.command;
@@ -226,69 +374,34 @@ app.registerExtension({
             }
 
             if (cmd === "applyPatch") {
-                // Patch mode — apply changes directly via LiteGraph API to avoid
-                // loadGraphData(), which always creates a new tab via beforeLoadNewGraph().
-                const patch = event.data.patch;
-
-                // Remove nodes first — LiteGraph remove() disconnects all connected links automatically
-                if (patch && patch.remove_nodes && Array.isArray(patch.remove_nodes)) {
-                    for (const id of patch.remove_nodes) {
-                        const n = app.graph.getNodeById(id);
-                        if (n) { app.graph.remove(n); }
-                    }
+                // Patch mode — in-place edits via the LiteGraph API, avoiding
+                // loadGraphData() (which always opens a new tab).
+                let report;
+                try {
+                    report = applyPatch(event.data.patch);
+                } catch (err) {
+                    report = { ts: Date.now(), applied: [], errors: [\`bridge threw: \${err && err.message}\`] };
                 }
+                lastPatchReport = report;
 
-                // Remove specific links without removing their nodes
-                if (patch && patch.remove_links && Array.isArray(patch.remove_links)) {
-                    for (const id of patch.remove_links) {
-                        app.graph.removeLink(id);
-                    }
-                }
-
-                // Update or add nodes
-                if (patch && patch.nodes && Array.isArray(patch.nodes)) {
-                    for (const pNode of patch.nodes) {
-                        let node = app.graph.getNodeById(pNode.id);
-
-                        if (!node && pNode.type) {
-                            // New node — create via LiteGraph and add to current graph
-                            node = LiteGraph.createNode(pNode.type);
-                            if (node) {
-                                node.id = pNode.id;
-                                app.graph.add(node);
-                            }
-                        }
-
-                        if (node) {
-                            if (pNode.pos !== undefined) { node.pos[0] = pNode.pos[0]; node.pos[1] = pNode.pos[1]; }
-                            if (pNode.size !== undefined) { node.size[0] = pNode.size[0]; node.size[1] = pNode.size[1]; }
-                            if (pNode.color !== undefined) { node.color = pNode.color; }
-                            if (pNode.bgcolor !== undefined) { node.bgcolor = pNode.bgcolor; }
-                            if (pNode.title !== undefined) { node.title = pNode.title; }
-                            if (pNode.widgets_values !== undefined && node.widgets) {
-                                for (let i = 0; i < Math.min(pNode.widgets_values.length, node.widgets.length); i++) {
-                                    node.widgets[i].value = pNode.widgets_values[i];
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Add new links via LiteGraph connect()
-                // Links are arrays: [link_id, src_node_id, src_slot, dst_node_id, dst_slot, dtype]
-                if (patch && patch.links && Array.isArray(patch.links)) {
-                    for (const link of patch.links) {
-                        const [, srcNodeId, srcSlot, dstNodeId, dstSlot] = link;
-                        const srcNode = app.graph.getNodeById(srcNodeId);
-                        if (srcNode) {
-                            srcNode.connect(srcSlot, dstNodeId, dstSlot);
-                        } else {
-                            console.warn("[VSCode Bridge] applyPatch: src node not found for link:", link);
-                        }
-                    }
+                if (report.errors.length > 0) {
+                    console.warn("[VSCode Bridge] applyPatch completed with errors:", report.errors);
+                } else {
+                    console.log("[VSCode Bridge] applyPatch applied:", report.applied);
                 }
 
                 app.graph.setDirtyCanvas(true, true);
+                // Acknowledge the specific request. Without this the extension writes
+                // an optimistic "ok" that is indistinguishable from a patch that never
+                // arrived at all — which is exactly what happens after a panel reload.
+                window.parent.postMessage({
+                    command: "applyPatchResult",
+                    requestId: event.data.requestId,
+                    report,
+                }, "*");
+                // Push the result out immediately rather than waiting for the poll,
+                // so the state file carries the report for this patch.
+                broadcastState();
             }
 
             if (cmd === "queueWorkflow") {
@@ -320,6 +433,13 @@ app.registerExtension({
                             return Number(idA) - Number(idB);
                         });
                     }
+                    // The outcome of the last patch rides along with the state so it
+                    // lands in workflow-state.readonly.json. The extension writes an
+                    // optimistic "ok" to apply-response.json without hearing back from
+                    // the canvas; this is the only channel that reports what the graph
+                    // actually did, per node.
+                    if (lastPatchReport) { workflowData._vscode_patch = lastPatchReport; }
+
                     const currentStr = JSON.stringify(workflowData);
                     if (currentStr !== lastSerialized) {
                         lastSerialized = currentStr;
@@ -337,6 +457,22 @@ app.registerExtension({
             window.addEventListener('keyup', debouncedBroadcast);
             setInterval(broadcastState, 2000);
         };
+
+        // Announce liveness as soon as the bridge is running. The extension cannot
+        // otherwise distinguish "panel object exists" from "canvas is reachable",
+        // and a state broadcast only fires when the graph actually changes — an idle
+        // canvas would look identical to a dead bridge.
+        const announceReady = () => {
+            window.parent.postMessage({ command: "bridgeReady", ts: Date.now() }, "*");
+        };
+        announceReady();
+        // Re-announce for a short window, in case the extension host attached its
+        // listener slightly after the iframe finished loading.
+        let announcements = 0;
+        const readyTimer = setInterval(() => {
+            announceReady();
+            if (++announcements >= 10) { clearInterval(readyTimer); }
+        }, 1000);
 
         setTimeout(() => { hookGraphEvents(); broadcastState(); }, 1000);
     }

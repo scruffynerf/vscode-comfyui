@@ -383,9 +383,14 @@ function writeDisplayNameIndex(objectInfo: Record<string, any>, rootPath: string
 
 const MODEL_FILE_EXTENSIONS = ['.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.gguf', '.sft'];
 
-function isModelFileList(values: string[]): boolean {
+// Combo option lists are not always strings, despite what /object_info mostly looks like:
+// SaveImagesResponse.bits is [8, 16], WanVideoSetRadialAttention.block_size is [128, 64],
+// ImageResizeKJ.crop contains 0. Typing this as string[] let a number reach toLowerCase(),
+// which threw and aborted the entire catalog build partway through — leaving some index
+// files written and others (widget-enums.json) missing entirely.
+function isModelFileList(values: unknown[]): boolean {
     if (values.length === 0) { return false; }
-    return values.some(v => MODEL_FILE_EXTENSIONS.some(ext => v.toLowerCase().endsWith(ext)));
+    return values.some(v => typeof v === 'string' && MODEL_FILE_EXTENSIONS.some(ext => v.toLowerCase().endsWith(ext)));
 }
 
 function writeOutputSlotIndex(objectInfo: Record<string, any>, rootPath: string) {
